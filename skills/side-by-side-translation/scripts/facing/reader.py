@@ -23,11 +23,11 @@ CSS = """
 body{margin:0;background:var(--paper);color:var(--ink);font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;font-size:17px;line-height:1.55}
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
-.top .in{max-width:1240px;margin:0 auto;padding:.7rem 1.2rem;display:flex;gap:1rem;align-items:baseline;flex-wrap:wrap}
+.top .in{margin:0 auto;padding:.6rem 1.4rem;display:flex;gap:1rem;align-items:baseline;flex-wrap:wrap}
 .top h1{font-size:1.1rem;font-weight:normal;margin:0;letter-spacing:.01em}.top h1 i{color:var(--ink)}
 .top .sub{color:var(--muted);font-size:.85rem}.top .back{font-size:.85rem;letter-spacing:.03em;text-transform:uppercase}
 .chip{display:inline-block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.05rem .55rem;margin-left:.3rem;vertical-align:middle;white-space:nowrap}
-.wrap{max-width:1240px;margin:0 auto;padding:1.4rem 1.2rem 5rem}
+.wrap{margin:0 auto;padding:1.2rem 1.4rem 5rem}.wrap.index{max-width:1100px}
 /* index */
 .hero{padding:2.4rem 0 1.2rem}.hero h1{font-size:2rem;font-weight:normal;margin:0 0 .3rem;letter-spacing:-.01em}.hero p{margin:0;color:var(--muted);max-width:60ch}
 .controls{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.6rem;position:sticky;top:3.1rem;background:var(--paper);padding:.6rem 0;z-index:4}
@@ -42,7 +42,9 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .row .m{color:var(--muted);font-size:.82rem;white-space:nowrap;text-align:right}.row .m .chip{margin-left:.35rem}
 .hidden{display:none!important}
 /* text page */
-.page{display:grid;grid-template-columns:250px minmax(0,1fr);gap:2rem}
+.page{display:grid;grid-template-columns:var(--side-w,250px) 10px minmax(0,1fr);gap:0 1rem;--side-w:250px;--cm-w:300px}
+.hdl{cursor:col-resize;border-radius:4px;background:transparent;position:relative}.hdl::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:var(--line);border-radius:2px}.hdl:hover::after,.hdl.on::after{background:var(--accent)}
+.hdl.r{display:none}body.an-with-comments .hdl.r{display:block}body.resizing{user-select:none;cursor:col-resize}
 .side{position:sticky;top:4.2rem;align-self:start;max-height:calc(100vh - 5rem);overflow:auto;font-size:.84rem;padding-right:.8rem;scrollbar-width:thin;scrollbar-color:var(--line) transparent;color:var(--toc)}
 .side h3{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--toc);font-weight:normal;margin:0 0 .5rem}
 .side a{display:block;color:var(--toc);padding:.16rem 0 .16rem .6rem;border-left:2px solid transparent;margin-left:-.6rem;line-height:1.35;transition:color .15s}
@@ -86,15 +88,15 @@ mark.an.cm{background:rgba(214,188,96,.18);box-shadow:0 1.5px 0 rgba(122,42,34,.
 .an-bar{position:absolute;z-index:20;display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
 .an-bar button{font:inherit;font-size:.9rem;width:2rem;height:1.9rem;border:0;background:transparent;border-radius:5px;cursor:pointer;color:var(--ink)}.an-bar button:hover{background:var(--orig)}
 .an-bar .sw{display:inline-block;width:14px;height:14px;border-radius:3px}.an-bar .sw.straw{background:rgba(214,188,96,.6)}.an-bar .sw.sage{background:rgba(120,160,120,.6)}.an-bar .sw.rose{background:rgba(200,120,120,.6)}
-.an-gutter{position:relative;display:none}body.an-with-comments .page{grid-template-columns:250px minmax(0,1fr) 280px}body.an-with-comments .an-gutter{display:block}
-.an-cm{position:absolute;left:0;width:280px;background:var(--note);border:1px solid var(--line);border-radius:8px;padding:.55rem .75rem;font-size:.84rem;line-height:1.4;box-shadow:var(--shadow);cursor:pointer}
+.an-gutter{position:relative;display:none}body.an-with-comments .page{grid-template-columns:var(--side-w,250px) 10px minmax(0,1fr) 10px var(--cm-w,300px)}body.an-with-comments .an-gutter{display:block}
+.an-cm{position:absolute;left:0;right:0;background:var(--note);border:1px solid var(--line);border-radius:8px;padding:.55rem .75rem;font-size:.84rem;line-height:1.4;box-shadow:var(--shadow);cursor:pointer}
 .an-cm .an-meta{color:var(--muted);font-size:.74rem;display:flex;gap:.3rem;align-items:baseline}.an-cm .an-meta b{color:var(--ink)}.an-x{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem}
 .an-cm .an-q{color:var(--muted);font-style:italic;margin:.2rem 0;font-size:.78rem}.an-cm .an-t{color:var(--ink)}
 .an-dlg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30;display:flex;align-items:center;justify-content:center}.an-dlg.hidden{display:none}
 .an-box{background:var(--card);color:var(--ink);max-width:34rem;padding:1.4rem 1.6rem;border-radius:10px;font-size:.92rem;line-height:1.45}.an-box h3{margin:0 0 .6rem;font-weight:normal}
 .an-box label{display:block;margin:.6rem 0;font-size:.85rem;color:var(--muted)}.an-box input{display:block;width:100%;font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);margin-top:.2rem}
 .an-row{display:flex;gap:.6rem;margin-top:.8rem}
-@media(max-width:900px){.page{grid-template-columns:1fr}body.an-with-comments .page{grid-template-columns:1fr}.an-gutter{position:static}.an-cm{position:static;width:auto;margin:.4rem 0}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
+@media(max-width:900px){.page{grid-template-columns:1fr}body.an-with-comments .page{grid-template-columns:1fr}.hdl{display:none!important}.an-gutter{position:static}.an-cm{position:static;width:auto;margin:.4rem 0}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
 """
 JS_INDEX = """
 const lang=document.getElementById('l'),q=document.getElementById('q'),n=document.getElementById('n');
@@ -105,6 +107,13 @@ function apply(){const L=lang.value,t=q.value.toLowerCase();let k=0;const search
 lang.addEventListener('change',apply);q.addEventListener('input',apply);apply();
 """
 JS_PAGE = """
+(function(){const pg=document.querySelector('.page');if(!pg)return;const st=k=>{try{return localStorage.getItem(k)}catch(e){return null}};const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+ const w0=st('fe-side-w'),w1=st('fe-cm-w');if(w0)pg.style.setProperty('--side-w',w0+'px');if(w1)pg.style.setProperty('--cm-w',w1+'px');
+ document.querySelectorAll('.hdl').forEach(h=>{h.addEventListener('mousedown',e=>{e.preventDefault();const side=h.dataset.for==='side';const x0=e.clientX;const cur=parseFloat(getComputedStyle(pg).getPropertyValue(side?'--side-w':'--cm-w'))||(side?250:300);
+  h.classList.add('on');document.body.classList.add('resizing');
+  const mv=ev=>{const d=ev.clientX-x0;const w=Math.max(120,Math.min(700,side?cur+d:cur-d));pg.style.setProperty(side?'--side-w':'--cm-w',w+'px')};
+  const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);h.classList.remove('on');document.body.classList.remove('resizing');sv(side?'fe-side-w':'fe-cm-w',parseFloat(getComputedStyle(pg).getPropertyValue(side?'--side-w':'--cm-w')));window.dispatchEvent(new Event('resize'))};
+  document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up)})})})();
 const links=[...document.querySelectorAll('.side a[href^="#"]')];const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
 if(links.length&&'IntersectionObserver' in window){let cur=null;const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const a=map.get(e.target.id);if(a){if(cur)cur.classList.remove('on');a.classList.add('on');cur=a;a.scrollIntoView({block:'nearest'})}}})},{rootMargin:'-10% 0px -80% 0px'});map.forEach((a,id)=>{const el=document.getElementById(id);if(el)io.observe(el)})}
 const q=document.getElementById('q');if(q){q.addEventListener('input',()=>{const t=q.value.toLowerCase();document.querySelectorAll('.card').forEach(c=>{c.classList.toggle('hidden',t.length>1&&!c.textContent.toLowerCase().includes(t))})})}
@@ -220,7 +229,7 @@ def render(path):
            f'<div class="toolbar"><input id="q" type="search" placeholder="find on this page"></div>']
     if toc:
         out.append('<h3>Contents</h3>' + ''.join(f'<a class="l{l}" href="#{cid}">{html.escape(t)}</a>' for l, t, cid in toc))
-    out.append('</aside><main>')
+    out.append('</aside><div class="hdl l" data-for="side"></div><main>')
     if general:
         out.append('<div class="gnotes"><h3>Notes on this text</h3>' + ''.join(general) + '</div>')
     def rows(o, e, ol, kind=''):
@@ -252,7 +261,7 @@ def render(path):
     orphan = [l for l in by_page if l not in seen]
     if orphan:
         out.append('<div class="gnotes"><h3>Notes on pages not shown separately</h3>' + ''.join(f'<p><b>{html.escape(l)}</b></p>' + ''.join(by_page[l]) for l in orphan) + '</div>')
-    out.append(f'</main></div></div><script>{JS_PAGE}</script>'
+    out.append(f'</main><div class="hdl r" data-for="cm"></div><aside class="an-gutter"></aside></div></div><script>{JS_PAGE}</script>'
                + (f'<script>window.ANNOT={json.dumps({"repo": REPO, "branch": SITE.get("branch", "main"), "rel": rel, "base": depth})}</script><script src="{depth}annot.js"></script>' if REPO else '')
                + '</body></html>')
     os.makedirs(os.path.dirname(f'{O}/{rel}.html'), exist_ok=True)
@@ -298,7 +307,7 @@ open(f'{O}/index.html', 'w').write(
     f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     f'<title>Idealisms Working Group Shared Repository</title><style>{CSS}</style></head><body>'
     f'<div class="top"><div class="in"><h1>Idealisms Working Group Shared Repository</h1><span class="sub">bilingual editions, original texts and notes</span></div></div>'
-    f'<div class="wrap"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
+    f'<div class="wrap index"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
     f'Translations are machine-made and model-reviewed, not human-revised; each page says where its text comes from.</p></div>'
     f'<div class="controls"><select id="l"><option value="all">All languages</option>{lopts}</select>'
     f'<input id="q" type="search" placeholder="search author or title"><span class="n" id="n"></span></div>'

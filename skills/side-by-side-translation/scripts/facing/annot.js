@@ -25,7 +25,7 @@
   cbA.onchange = () => { store.set('annot-show', cbA.checked ? 'on' : 'off'); render(); };
   cbC.onchange = () => { store.set('annot-comments', cbC.checked ? 'on' : 'off'); render(); };
   const page = document.querySelector('.page');
-  const gutter = document.createElement('aside'); gutter.className = 'an-gutter'; page.appendChild(gutter);
+  let gutter = page.querySelector('.an-gutter'); if (!gutter) { gutter = document.createElement('aside'); gutter.className = 'an-gutter'; page.appendChild(gutter); }
   const bar = document.createElement('div'); bar.className = 'an-bar hidden';
   bar.innerHTML = `<button data-t="hl" data-c="straw" title="highlight"><i class="sw straw"></i></button><button data-t="hl" data-c="sage" title="highlight"><i class="sw sage"></i></button>
     <button data-t="hl" data-c="rose" title="highlight"><i class="sw rose"></i></button><button data-t="ul" title="underline"><u>U</u></button>
@@ -74,7 +74,8 @@
       payload.content = btoa(unescape(encodeURIComponent(JSON.stringify({ items }, null, 1)))); payload.sha = sha;
       r = await fetch(API, { method: 'PUT', headers: { Authorization: 'Bearer ' + token(), 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     }
-    if (!r.ok) { alert('Could not save the annotation (GitHub answered ' + r.status + '). Check the token and its permissions.'); return false; }
+    if (!r.ok) { let why = ''; try { why = (await r.json()).message || ''; } catch (e) {}
+      alert('Could not save the annotation. GitHub answered ' + r.status + (why ? ': ' + why : '') + '.\n\nThe token must be a fine-grained token with Repository access = only ' + REPO.split('/')[1] + ' and Permissions → Contents = Read and write.'); return false; }
     sha = (await r.json()).content.sha; return true;
   }
 

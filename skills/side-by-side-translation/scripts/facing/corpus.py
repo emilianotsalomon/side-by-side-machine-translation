@@ -129,13 +129,65 @@ def join_lines(ls):
     return t.strip()
 
 
-def ocr_slices(W, p, anchors, nprinted):
+_GEO = {}
+
+
+def ocr_lines_geo(W, p, LJ, d, cfg):
+    """the page's words from the source PDF's text layer, placed on the detected printed lines (exact, like bundle.py):
+    returns one string per printed line, or None when the PDF has no usable text on this page"""
+    o = cfg.get('ocr', {})
+    pdf = os.path.join(W, o.get('pdf', 'src/orig.pdf'))
+    if not os.path.exists(pdf):
+        return None
+    n = int(p[1:]) + o.get('pdf_offset', 0)
+    r = subprocess.run(['pdftotext', '-f', str(n), '-l', str(n), '-bbox', pdf, '-'], capture_output=True, text=True)
+    m = re.search(r'<page width="([\d.]+)" height="([\d.]+)"', r.stdout)
+    if not m:
+        return None
+    pw, ph = float(m.group(1)), float(m.group(2))
+    dx = dy = 0.0
+    cp = f'{W}/clean.pdf'
+    if os.path.exists(cp):                                 # HathiTrust-style prep moved the mediabox onto the scan image
+        try:
+            from pypdf import PdfReader
+            key = (W, 'clean')
+            if key not in _GEO:
+                _GEO[key] = PdfReader(cp)
+            if (W, 'src') not in _GEO:
+                _GEO[(W, 'src')] = PdfReader(pdf)
+            cb = _GEO[key].pages[int(p[1:]) - 1].mediabox; sb = _GEO[(W, 'src')].pages[n - 1].mediabox
+            if abs(float(cb.width) - pw) > 1 or abs(float(cb.height) - ph) > 1 or float(cb.left) or float(cb.bottom):
+                dx, dy = float(cb.left) - float(sb.left), float(sb.top) - float(cb.top)
+                pw, ph = float(cb.width), float(cb.height)
+        except Exception:
+            pass
+    w, h = d['w'], d['h']
+    kx, ky = w / pw, h / ph
+    words = [((float(x0) - dx) * kx, (float(y0) - dy) * ky, (float(x1) - dx) * kx, (float(y1) - dy) * ky, html.unescape(t))
+             for x0, y0, x1, y1, t in re.findall(r'<word xMin="([\d.]+)" yMin="([\d.]+)" xMax="([\d.]+)" yMax="([\d.]+)">(.*?)</word>', r.stdout)]
+    if len(words) < 6:
+        return None
+    pitch = (LJ[-1][0] - LJ[0][0]) / max(1, len(LJ) - 1) if len(LJ) > 1 else 30
+    rows = [[] for _ in LJ]
+    for x0, y0, x1, y1, t in words:
+        cy = (y0 + y1) / 2
+        j = min(range(len(LJ)), key=lambda i: abs((LJ[i][0] + LJ[i][1]) / 2 - cy))
+        top, bot = LJ[j][0], LJ[j][1]
+        if top - 0.6 * pitch <= cy <= bot + 0.6 * pitch:    # words far from every line (running head, stamps) are dropped
+            rows[j].append((x0, t))
+    return [' '.join(t for _, t in sorted(r)) for r in rows]
+
+
+def ocr_slices(W, p, anchors, nprinted, LJ=None, d=None, cfg=None):
     """split the page's OCR lines at the English blocks' line anchors -> one original slice per block"""
-    L = ocr_lines(W, p)
+    L = ocr_lines_geo(W, p, LJ, d, cfg) if (LJ and d and cfg) else None
+    exact = L is not None
+    if L is None:
+        L = ocr_lines(W, p)
     if not L:
         return None
     n = len(L)
-    k = n / nprinted if nprinted and abs(n - nprinted) > 0.15 * nprinted else 1.0    # proportional only when counts disagree
+    k = 1.0 if exact or not nprinted or abs(n - nprinted) <= 0.15 * nprinted else n / nprinted
     starts = []
     for a in anchors:
         if a is None:
@@ -144,7 +196,7 @@ def ocr_slices(W, p, anchors, nprinted):
     known = [i for i, x in enumerate(starts) if x is not None]
     out = [''] * len(anchors)
     for j, i in enumerate(known):
-        s0 = 0 if j == 0 else starts[i]
+        s0 = starts[i] if (j > 0 or starts[i] <= 3) else 0    # lines above the first block (running head) are dropped
         s1 = n if j == len(known) - 1 else starts[known[j + 1]]
         if s1 < s0:
             s1 = s0
@@ -264,7 +316,8 @@ def mode_book():
             for i, a in enumerate(anchors):           # data-at="Y" (scan px) -> the first printed line at or below Y
                 if isinstance(a, tuple):
                     anchors[i] = (min(range(len(LJ)), key=lambda j: abs(LJ[j][0] - a[1])) + 1) if LJ else None   # nearest printed line
-            sl = ocr_slices(W, p, anchors, nprinted)
+            DJ = json.load(open(lj)) if os.path.exists(lj) else None
+            sl = ocr_slices(W, p, anchors, nprinted, LJ, DJ, cfg)
             if sl is not None:
                 nocr += 1
             order = [i for i, b in enumerate(bl) if b[0] != 'note'] + [i for i, b in enumerate(bl) if b[0] == 'note']

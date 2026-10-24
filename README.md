@@ -24,7 +24,7 @@ It also builds parallel-text HTML readers and print PDFs from two text/Markdown/
    plus Google Chrome. Linux equivalents and details: `skills/side-by-side-translation/references/install.md`.
 3. Check the machine:
    ```bash
-   skills/side-by-side-translation/scripts/facing/py skills/side-by-side-translation/scripts/facing/doctor.py --lang deu,frk
+   skills/side-by-side-translation/scripts/facing/py doctor.py --lang deu,frk
    ```
 
 ## Use

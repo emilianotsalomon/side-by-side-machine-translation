@@ -7,8 +7,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install ruff
@@ -18,12 +18,12 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: sudo apt-get update && sudo apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-deu
       # google-chrome is preinstalled on ubuntu-latest; render.sh finds it on PATH
-      - run: skills/side-by-side-translation/scripts/facing/py skills/side-by-side-translation/scripts/facing/doctor.py --lang deu
+      - run: skills/side-by-side-translation/scripts/facing/py doctor.py --lang deu
       - run: tests/smoke.sh

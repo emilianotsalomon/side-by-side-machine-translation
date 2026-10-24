@@ -32,3 +32,6 @@ It also builds parallel-text HTML readers and print PDFs from two text/Markdown/
 In a Claude Code session, give it the PDF and ask for a side-by-side translation ("scope and plan out a side by side translation of this into English, keep original pagination"). Claude asks photocopy or clean-text, then sets the book up with `new_book.py` under `~/Desktop/claude-folder/_facing-pipeline/<book>/` (persistent; change with `--root`), translates with subagents, reviews, and builds the PDF with `make.py`.
 
 Where things are: the skill's `SKILL.md` (entry point), `references/facing-edition.md` (the scanned-book pipeline), `references/install.md` (per-machine setup), `scripts/facing/` (pipeline), `templates/facing/` (agent briefs and config), `assets/` (PDF template and fonts), `agents/` (lean subagents).
+
+## Checks
+`tests/smoke.sh` runs both pipelines end to end on tiny fixtures (a few seconds; needs what `doctor.py` checks for). GitHub Actions (`.github/workflows/ci.yml`) runs it and the `ruff` linter on every push and pull request.

@@ -11,7 +11,7 @@ hyperlink text without the link, no images, no index entries, no fields. Encodin
 file's code page (\\ansicpg), \\uN Unicode escapes honoured. Prints a summary; --list-headings prints every
 heading with its level so the hierarchy can be checked before building."""
 from __future__ import annotations
-import argparse, pathlib, re, sys
+import argparse, pathlib, re
 
 SKIP = {"fonttbl", "colortbl", "stylesheet", "info", "pict", "header", "footer", "headerl", "headerr", "footerl", "footerr", "headerf", "footerf",
         "xe", "tc", "fldinst", "datafield", "themedata", "colorschememapping", "latentstyles", "rsidtbl", "generator", "pgdsctbl", "listtable",
@@ -111,7 +111,7 @@ def convert(data: bytes):
 
 
 def to_markdown(paras, notes):
-    out = ["<!-- rtf_to_md: heading levels from the document's own styles -->"]; note_i = 0; pending = []
+    out = ["<!-- rtf_to_md: heading levels from the document's own styles -->"]
     for style, t in paras:
         if re.fullmatch(r"\[\d{1,4}\]", t): out.append(t); continue
         level = style if 1 <= style <= 9 else (1 if style == 53 else 0)

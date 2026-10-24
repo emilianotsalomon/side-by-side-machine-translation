@@ -15,7 +15,7 @@ the [n] page markers (a marker the translator dropped is re-inserted at the prop
 from __future__ import annotations
 import argparse, json, pathlib, re, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from translate_md import load_paragraphs, is_caps, anchors, parse_reply, check_chunk, repair_markers, LANG, TAG
+from translate_md import load_paragraphs, is_caps, parse_reply, check_chunk, repair_markers, LANG, TAG
 
 BRIEF = """# Translator's brief — {src} → {tgt}
 

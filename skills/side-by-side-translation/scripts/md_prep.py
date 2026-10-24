@@ -30,7 +30,7 @@ Rules (everything applied is listed in the report):
     python3 md_prep.py FILE.md [--side orig|trans] [-o out.txt] [--json]
 """
 from __future__ import annotations
-import argparse, json, os, pathlib, re, sys
+import argparse, json, os, pathlib, re
 
 MD_SUFFIXES = ('.md', '.markdown', '.mdown')
 

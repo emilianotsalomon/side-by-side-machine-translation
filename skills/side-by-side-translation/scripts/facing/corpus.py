@@ -310,6 +310,8 @@ def mode_pdf():
 
 def write(slug, head, body_lines):
     C = os.path.abspath(opt.get('-o', 'corpus')); os.makedirs(C, exist_ok=True)
+    if opt.get('--genre'):                                  # --genre "German idealism": groups the index and the reader menu
+        head = {**{k: v for k, v in head.items() if k != 'generated'}, 'genre': opt['--genre'], 'generated': head['generated']}
     path = f'{C}/{slug}.md'
     fm = '\n'.join(f'{k}: {json.dumps(v, ensure_ascii=False) if isinstance(v, str) and (":" in v or v.startswith(("[", "*"))) else v}' for k, v in head.items())
     t = f"# {head['author']}, *{head['title']}*" + (f" ({head['year']})" if head['year'] else '') + (f" — *{head['title_en']}*" if head['title_en'] else '')
@@ -472,13 +474,13 @@ def html_to_md(src):
     h = re.sub(r'<(p|h\d|div)\b[^>]*class="[^"]*\b(toc-title|index-page-num|ornament)\b[^"]*"[^>]*>.*?</\1>', '', h, flags=re.S)
     h = re.sub(r'<hr\b[^>]*class="[^"]*section-break[^"]*"[^>]*>|<(p|div)\b[^>]*class="[^"]*section-break[^"]*"[^>]*>\s*(?:[^<]|<(?!/\1>))*</\1>', '<p>⁂</p>', h, flags=re.S)
     h = re.sub(r'<label\b[^>]*>.*?</label>|<input\b[^>]*>', '', h, flags=re.S)
-    notes = []
+    notes, nn = [], [0]
     def grab_note(m):
-        t = re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', '', m.group(1)))).strip()
+        t = re.sub(r'\s+', ' ', html.unescape(re.sub(r'<[^>]+>', '', m.group(3)))).strip()
         t = re.sub(r'^(\d{1,3}|\*+)\s*', '', t)                       # the sidenote repeats its own number
-        notes.append(t); return f'<sup>{len(notes)}</sup>'
+        nn[0] += 1; notes.append((nn[0], t)); return f'<sup>{nn[0]}</sup>'
     h = re.sub(r'<span\b[^>]*class="[^"]*\bsidenote-number\b[^"]*"[^>]*>.*?</span>', '', h, flags=re.S)
-    h = re.sub(r'<(span|div|aside)\b[^>]*class="[^"]*\b(sidenote|marginnote|footnote)\b[^"]*"[^>]*>(.*?)</\1>', lambda m: grab_note(type('M', (), {'group': lambda self, i, t=m.group(3): t})()), h, flags=re.S)
+    SIDENOTE = re.compile(r'<(span|div|aside)\b[^>]*class="[^"]*\b(sidenote|marginnote|footnote)\b[^"]*"[^>]*>(.*?)</\1>', re.S)
     h = re.sub(r'<span\b[^>]*class="[^"]*\bfolio\b[^"]*"[^>]*>\s*\[?([^<\]]+?)\]?\s*</span>', r' [p. \1] ', h)
     h = re.sub(r'<span\b[^>]*class="[^"]*\b(speaker|run-in)\b[^"]*"[^>]*>(.*?)</span>', r'**\2** ', h, flags=re.S)
     h = re.sub(r'<(div|p)\b[^>]*class="[^"]*\bsection-label\b[^"]*"[^>]*>(.*?)</\1>', r'<h3>\2</h3>', h, flags=re.S)
@@ -495,6 +497,8 @@ def html_to_md(src):
             inq = True
         closes = '</blockquote>' in inner
         inner = re.sub(r'</(p|h[1-6]|blockquote|li|div|article|section|body|html)>', ' ', inner)
+        k0 = len(notes)
+        inner = SIDENOTE.sub(grab_note, inner)
         t = inline(inner).replace('∗∗', '**')
         if t == '⁂':
             out.append('⁂')
@@ -507,8 +511,8 @@ def html_to_md(src):
                 out.append(t)                       # list items (dialogue lines) as plain paragraphs
         if closes:
             inq = False
-    for i, n in enumerate(notes, 1):
-        out.append(f'<sup>{i}</sup> {n}')
+        for i, n in notes[k0:]:                     # the paragraph's notes follow it; the reader sets them at the page foot
+            out.append(f'<sup>{i}</sup> {n}')
     return out
 
 

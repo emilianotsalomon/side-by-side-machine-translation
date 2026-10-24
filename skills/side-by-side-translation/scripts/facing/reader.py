@@ -48,7 +48,9 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .page{display:grid;grid-template-columns:var(--side-w,250px) 10px minmax(0,1fr);gap:0 1rem;--side-w:250px;--cm-w:300px}
 .hdl{cursor:col-resize;border-radius:4px;background:transparent;position:relative}.hdl::after{content:"";position:absolute;top:0;bottom:0;left:4px;width:2px;background:var(--line);border-radius:2px}.hdl:hover::after,.hdl.on::after{background:var(--accent)}
 .hdl.r{display:none}body.an-with-comments .hdl.r{display:block}body.resizing{user-select:none;cursor:col-resize}
-.tog{font:inherit;font-size:1rem;line-height:1;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--muted);width:1.9rem;height:1.6rem;cursor:pointer;align-self:center}.tog:hover{color:var(--ink)}
+.tog{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:6;display:flex;flex-direction:column;align-items:center;gap:.15rem;width:1.7rem;padding:.6rem 0 .5rem;border:1px solid var(--line);border-left:0;border-radius:0 8px 8px 0;background:var(--card);color:var(--muted);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);font:inherit}
+.tog span{font-size:1.3rem;line-height:1}.tog small{writing-mode:vertical-rl;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase}.tog:hover{color:var(--ink);background:var(--orig)}
+body.noside .tog span{transform:scaleX(-1)}body.noside .tog{left:0}
 body.noside .page{grid-template-columns:0 0 minmax(0,1fr)}body.noside.an-with-comments .page{grid-template-columns:0 0 minmax(0,1fr) 10px var(--cm-w,300px)}
 body.noside .side,body.noside .hdl.l{visibility:hidden;overflow:hidden;padding:0;min-width:0;width:0}
 body.noside .page{gap:0 0}body.noside main{padding-left:.2rem}
@@ -125,7 +127,7 @@ q.addEventListener('input',apply);build();
 """
 JS_PAGE = """
 (function(){const pg=document.querySelector('.page');if(!pg)return;const st=k=>{try{return localStorage.getItem(k)}catch(e){return null}};const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
- const tog=document.getElementById('tog');const setSide=on=>{document.body.classList.toggle('noside',!on);sv('fe-side',on?'on':'off');window.dispatchEvent(new Event('resize'))};
+ const tog=document.getElementById('tog');const setSide=on=>{document.body.classList.toggle('noside',!on);sv('fe-side',on?'on':'off');if(tog)tog.title=(on?'hide':'show')+' the contents (press c)';window.dispatchEvent(new Event('resize'))};
  setSide(st('fe-side')!=='off');if(tog)tog.onclick=()=>setSide(document.body.classList.contains('noside'));
  document.addEventListener('keydown',e=>{if(e.key==='c'&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!/input|textarea/i.test(e.target.tagName))setSide(document.body.classList.contains('noside'))});
  const w0=st('fe-side-w'),w1=st('fe-cm-w');if(w0)pg.style.setProperty('--side-w',w0+'px');if(w1)pg.style.setProperty('--cm-w',w1+'px');
@@ -242,7 +244,7 @@ def render(path):
         g('original_language') + ('→en' if not mono else ''), 'original only' if mono else g('edition_layout').split(' (')[0], g('genre')) if x)
     out = [f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
            f'<title>{html.escape(g("author"))}, {html.escape(g("title"))}</title><style>{CSS}</style></head><body>'
-           f'<div class="top"><div class="in"><a class="back" href="{depth}index.html">← Library</a><button class="tog" id="tog" title="show or hide the contents (press c)">☰</button><h1>{title}'
+           f'<div class="top"><div class="in"><a class="back" href="{depth}index.html">← Library</a><h1>{title}'
            f'{(" — <i>" + html.escape(g("title_en")) + "</i>") if g("title_en") else ""}</h1>{chips}</div></div>'
            f'<div class="wrap"><div class="page"><aside class="side">'
            f'<p class="meta">{html.escape(g("original_text"))}.' + (f' Translation: {html.escape(g("translation"))}.' if not mono else '') + '</p>'
@@ -250,6 +252,7 @@ def render(path):
     if toc:
         out.append('<h3>Contents</h3>' + ''.join(f'<a class="l{l}" href="#{cid}">{html.escape(t)}</a>' for l, t, cid in toc))
     out.append('</aside><div class="hdl l" data-for="side"></div><main>')
+    out.append('<button class="tog" id="tog" title="hide the contents (press c)" aria-label="hide or show the contents"><span>‹</span><small>contents</small></button>')
     if general:
         out.append('<div class="gnotes"><h3>Notes on this text</h3>' + ''.join(general) + '</div>')
     def rows(o, e, ol, kind=''):

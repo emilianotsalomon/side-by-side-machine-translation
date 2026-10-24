@@ -52,7 +52,9 @@ def inline(h):
 ANCH = {}                                             # block id -> data-l anchor (line number) of the last blocks() call
 
 
+
 def blocks(path):
+    titlepage = getattr(blocks, 'titlepage', False)
     """[(kind, cls, text)]  kind: h1..h4 | p | note | mn;  ANCH[path] = [line anchor per block or None]"""
     s = re.sub(r'<!--.*?-->', '', open(path).read(), flags=re.S)
     out, anchors = [], []
@@ -72,8 +74,10 @@ def blocks(path):
         centred = bool(words) and (words[0] in ('c', 'ch', 'tit', 'sec', 'pt', 'h') or 'c' in words[:2]) and 'pn' not in words
         if tag.startswith('h'):
             out.append((tag, cls, t))
-        elif tag == 'p' and centred and len(t) <= 90 and not re.fullmatch(r'[§\s\d.,;:—–-]+', t):
-            out.append(('h3', cls, t))              # a centred line of text is a heading (contents entry)
+        elif tag == 'p' and centred and len(t) <= 90 and not re.fullmatch(r'[§\s\d.,;:—–-]+', t) \
+                and not re.search(r'\b1[5-9]\d\d\b|\b(von|by|bei|chez|par|verlag|druck|press|printed|published|gedruckt|imprenta|editor|libreria|librairie|buchhandlung)\b', t, re.I) \
+                and re.search(r'[A-Za-zÀ-ÿ]{3,}', t) and not titlepage:
+            out.append(('h3', cls, t))              # a centred line of text is a heading (contents entry); never on title pages
         elif c0 in ('note', 'fn'):
             out.append(('note', cls, t))
         elif c0 == 'mn':
@@ -207,6 +211,7 @@ def mode_book():
     if has_orig:                                           # paragraph pairs, markers inline (clean-text editions)
         rows, carry = [], None
         for p in pages:
+            blocks.titlepage = pages.index(p) < 2
             a, b = blocks(f'{W}/orig/{p}.html'), blocks(f'{W}/en/{p}.html')
             if [x[0] for x in a] != [x[0] for x in b]:
                 print(f'  {p}: block structure differs — paired by position', file=sys.stderr)
@@ -248,6 +253,7 @@ def mode_book():
     else:                                                  # page pairs: OCR page, then the English of that page
         nocr = 0
         for p in pages:
+            blocks.titlepage = pages.index(p) < 2
             n = folio(f'{W}/en/{p}.html')
             add(f'[p. {n}]' if n else f'[scan {int(p[1:])}]'); add('')
             ef = f'{W}/en/{p}.html'
@@ -298,6 +304,8 @@ def pdf_half(f, p, x, w, h):
 
 
 def parse_half(txt):
+    if not hasattr(parse_half, 'titlepage'):
+        parse_half.titlepage = False
     """layout text of one half -> (folio, [paragraphs], [notes])"""
     lines = txt.split('\n')
     while lines and not lines[0].strip():
@@ -349,7 +357,8 @@ def parse_half(txt):
         caps = p.isupper() and len(p) >= 4
         centred = i < len(cind) and cind[i] >= 6
         real = re.search(r'[A-Za-zÀ-ÿ]{3,}', p) and p.lower().strip('.') not in ('of', 'and', 'the', 'by', 'von', 'der', 'de', 'del', 'y', 'e', 'et', 'di')
-        if short and real and (caps or (centred and HEAD.match(p)) or (centred and len(p) <= 40 and not p.endswith('.'))):
+        imprint = re.search(r'\b1[5-9]\d\d\b|\b(von|by|bei|chez|par|verlag|druck|press|printed|published|imprenta|editor|libreria|librairie|buchhandlung|edition|edición|edizione)\b', p, re.I)
+        if short and real and not imprint and not parse_half.titlepage and (caps or (centred and HEAD.match(p)) or (centred and len(p) <= 40 and not p.endswith('.'))):
             out.append('## ' + p.rstrip('.') if not p.endswith('.') or caps else '## ' + p)
         else:
             out.append(p)
@@ -370,6 +379,7 @@ def mode_pdf():
     out, npages, nleft = [], 0, 0
     add = out.append
     for p in range(first, last + 1):
+        parse_half.titlepage = (p - first) < 3
         right = pdf_half(f, p, int(Wd / 2), int(Wd / 2) + 2, int(Ht) + 2)
         left = pdf_half(f, p, 0, int(Wd / 2), int(Ht) + 2)
         folR, bodyR, notesR = parse_half(right)
@@ -488,6 +498,7 @@ def mode_text():
         lang = opt.get('--ocr', '')
         nocr = 0
         for p in range(first, last + 1):
+            parse_half.titlepage = (p - first) < 3
             txt = pdf_half(f, p, 0, int(Wd) + 2, int(Ht) + 2)
             if len(txt.strip()) < 40 and lang:
                 txt = ocr_page(f, p, lang); nocr += 1

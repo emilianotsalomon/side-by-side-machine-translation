@@ -4,8 +4,17 @@ contents drawer; the group's notes from CORPUS/notes/<same path>.md shown on the
 Standard library only — it runs in a GitHub Action.   usage: reader.py CORPUS_DIR OUT_DIR"""
 import sys, os, re, glob, html
 
+import json, shutil
 C, O = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
 os.makedirs(O, exist_ok=True)
+HERE = os.path.dirname(os.path.abspath(__file__))
+SITE = json.load(open(f'{HERE}/site.json')) if os.path.exists(f'{HERE}/site.json') else {}
+REPO = SITE.get('repo', '')                          # "owner/name": shared annotations are written to annotations/<text>.json there
+if os.path.exists(f'{HERE}/annot.js'):
+    shutil.copy(f'{HERE}/annot.js', f'{O}/annot.js')
+ANN = os.path.join(os.path.dirname(C), 'annotations')
+if os.path.isdir(ANN):
+    shutil.copytree(ANN, f'{O}/annotations', dirs_exist_ok=True)
 
 CSS = """
 :root{--paper:#f6f3ec;--card:#fffdf8;--ink:#1f1c17;--muted:#6e675b;--toc:#a39d92;--accent:#7a2a22;--line:#e3dccd;--orig:#f0ebdf;--note:#fbf6e6;--shadow:0 1px 2px rgba(60,40,10,.06)}
@@ -24,7 +33,10 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .controls{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.6rem;position:sticky;top:3.1rem;background:var(--paper);padding:.6rem 0;z-index:4}
 select,input[type=search]{font:inherit;font-size:.95rem;padding:.45rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-size:.85rem;margin-left:auto}
-.genre{margin:0 0 2rem}.genre h2{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:normal;margin:0 0 .5rem;padding-bottom:.35rem;border-bottom:1px solid var(--line)}
+.genre{margin:0;border-bottom:1px solid var(--line)}.genre summary{display:flex;align-items:baseline;gap:1rem;padding:.9rem .2rem;cursor:pointer;list-style:none}
+.genre summary::-webkit-details-marker{display:none}.genre summary::before{content:"›";color:var(--muted);display:inline-block;transition:transform .15s;width:.8rem}.genre[open] summary::before{transform:rotate(90deg)}
+.genre h2{font-size:1.05rem;font-weight:normal;margin:0;letter-spacing:.01em}.genre .cnt{color:var(--muted);font-size:.82rem;margin-left:auto}
+.genre[open]{padding-bottom:.6rem}.genre .row{margin-left:1.8rem}
 .row{display:grid;grid-template-columns:1fr auto;gap:.6rem 1.4rem;padding:.6rem .2rem;border-bottom:1px solid var(--line);align-items:baseline}
 .row:last-child{border-bottom:0}.row .t a{font-size:1.05rem}.row .t .en{color:var(--muted);font-size:.92rem;display:block}
 .row .m{color:var(--muted);font-size:.82rem;white-space:nowrap;text-align:right}.row .m .chip{margin-left:.35rem}
@@ -38,10 +50,12 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .side .meta{color:var(--toc);line-height:1.4;margin:0 0 1rem;font-size:.8rem}
 .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:1.1rem 1.3rem 1rem;margin:0 0 1.1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
 .card.mono{grid-template-columns:1fr;max-width:48rem}
-.card.pairs{display:block}.card.pairs h2,.card.pairs h3,.card.pairs h4{display:block}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:0 0 .5rem}.row.single{grid-template-columns:1fr}.row.single .e{max-width:66ch}.row:last-child{margin-bottom:0}
-.row .o{background:var(--orig);border-radius:7px;padding:.55rem .9rem;font-size:.96em}.row .o.empty{background:transparent}
-.fnrows{margin-top:.9rem;padding-top:.6rem;border-top:1px solid var(--line)}.fnrow .o,.fnrow .e{font-size:.84em;line-height:1.45;color:var(--muted)}.fnrow .o{background:transparent;padding:0 .9rem}
+.card.pairs{display:block;padding:1.1rem 1.3rem 1rem 0;background:linear-gradient(to right,var(--orig) 0,var(--orig) calc(50% - .35rem),var(--card) calc(50% - .35rem))}
+.card.pairs h2,.card.pairs h3,.card.pairs h4{display:block;margin-left:1.3rem}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:0 0 .75em}.row.single{grid-template-columns:1fr}.row.single .e{max-width:66ch;margin-left:1.3rem}.row:last-child{margin-bottom:0}
+.row .o{padding:0 .9rem 0 1.3rem;font-size:.96em}.row .o p{margin:0}.row .e p{margin:0}
+.card.pairs .pg{left:1rem}
+.fnrows{margin-top:.9rem;padding-top:.6rem;border-top:1px solid var(--line)}.fnrow .o,.fnrow .e{font-size:.84em;line-height:1.45;color:var(--muted)}
 .fnrow{margin-bottom:.3rem}
 .card .pg{position:absolute;top:-.62rem;left:1rem;font-size:.72rem;letter-spacing:.08em;color:var(--accent);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:.02rem .55rem}
 .card h2,.card h3,.card h4,.card h5{grid-column:1/-1;font-weight:normal;text-align:center;margin:.3rem 0 .5rem;line-height:1.3}
@@ -61,15 +75,34 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .notes p{margin:0 0 .5em}.notes .who{color:var(--muted);font-size:.85em}
 .gnotes{background:var(--note);border:1px solid var(--line);border-radius:10px;padding:1rem 1.3rem;margin:0 0 1.2rem;font-size:.95em}.gnotes h3{margin:0 0 .4rem;font-weight:normal;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 sup{font-size:.7em;line-height:0}.toolbar{display:flex;gap:.7rem;align-items:center;margin:0 0 1.2rem}.toolbar input{max-width:24rem}
-@media(max-width:900px){.page{grid-template-columns:1fr}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
+/* annotations */
+mark.an{background:transparent;color:inherit;border-radius:2px}mark.an.hl.straw{background:rgba(214,188,96,.28)}mark.an.hl.sage{background:rgba(120,160,120,.26)}mark.an.hl.rose{background:rgba(200,120,120,.24)}
+mark.an.ul{text-decoration:underline;text-decoration-color:rgba(122,42,34,.55);text-decoration-thickness:1.5px;text-underline-offset:3px}
+mark.an.st{text-decoration:line-through;text-decoration-color:rgba(60,60,60,.55);text-decoration-thickness:1.5px}
+mark.an.cm{background:rgba(214,188,96,.18);box-shadow:0 1.5px 0 rgba(122,42,34,.45)}mark.an.on{background:rgba(214,188,96,.45)}
+@media(prefers-color-scheme:dark){mark.an.hl.straw{background:rgba(214,188,96,.22)}mark.an.hl.sage{background:rgba(120,160,120,.22)}mark.an.hl.rose{background:rgba(200,120,120,.2)}}
+.an-ctl{margin-left:auto;display:flex;gap:.9rem;align-items:center;font-size:.8rem;color:var(--muted)}.an-ctl label{display:flex;gap:.3rem;align-items:center;cursor:pointer}
+.an-btn{font:inherit;font-size:.78rem;padding:.2rem .6rem;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--muted);cursor:pointer}.an-btn:hover{color:var(--ink)}
+.an-bar{position:absolute;z-index:20;display:flex;gap:2px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:3px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.an-bar button{font:inherit;font-size:.9rem;width:2rem;height:1.9rem;border:0;background:transparent;border-radius:5px;cursor:pointer;color:var(--ink)}.an-bar button:hover{background:var(--orig)}
+.an-bar .sw{display:inline-block;width:14px;height:14px;border-radius:3px}.an-bar .sw.straw{background:rgba(214,188,96,.6)}.an-bar .sw.sage{background:rgba(120,160,120,.6)}.an-bar .sw.rose{background:rgba(200,120,120,.6)}
+.an-gutter{position:relative;display:none}body.an-with-comments .page{grid-template-columns:250px minmax(0,1fr) 280px}body.an-with-comments .an-gutter{display:block}
+.an-cm{position:absolute;left:0;width:280px;background:var(--note);border:1px solid var(--line);border-radius:8px;padding:.55rem .75rem;font-size:.84rem;line-height:1.4;box-shadow:var(--shadow);cursor:pointer}
+.an-cm .an-meta{color:var(--muted);font-size:.74rem;display:flex;gap:.3rem;align-items:baseline}.an-cm .an-meta b{color:var(--ink)}.an-x{margin-left:auto;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1rem}
+.an-cm .an-q{color:var(--muted);font-style:italic;margin:.2rem 0;font-size:.78rem}.an-cm .an-t{color:var(--ink)}
+.an-dlg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30;display:flex;align-items:center;justify-content:center}.an-dlg.hidden{display:none}
+.an-box{background:var(--card);color:var(--ink);max-width:34rem;padding:1.4rem 1.6rem;border-radius:10px;font-size:.92rem;line-height:1.45}.an-box h3{margin:0 0 .6rem;font-weight:normal}
+.an-box label{display:block;margin:.6rem 0;font-size:.85rem;color:var(--muted)}.an-box input{display:block;width:100%;font:inherit;padding:.4rem .6rem;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);margin-top:.2rem}
+.an-row{display:flex;gap:.6rem;margin-top:.8rem}
+@media(max-width:900px){.page{grid-template-columns:1fr}body.an-with-comments .page{grid-template-columns:1fr}.an-gutter{position:static}.an-cm{position:static;width:auto;margin:.4rem 0}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
 """
 JS_INDEX = """
-const sel=document.getElementById('g'),lang=document.getElementById('l'),q=document.getElementById('q'),n=document.getElementById('n');
-function apply(){const g=sel.value,L=lang.value,t=q.value.toLowerCase();let k=0;
- document.querySelectorAll('.genre').forEach(s=>{let any=false;s.querySelectorAll('.row').forEach(r=>{const ok=(g==='all'||s.dataset.genre===g)&&(L==='all'||r.dataset.lang===L)&&(t.length<2||r.textContent.toLowerCase().includes(t));r.classList.toggle('hidden',!ok);if(ok){any=true;k++}});s.classList.toggle('hidden',!any)});
- n.textContent=k+' text'+(k===1?'':'s');try{localStorage.setItem('fe-genre',g)}catch(e){}}
-[sel,lang].forEach(e=>e.addEventListener('change',apply));q.addEventListener('input',apply);
-try{const s=localStorage.getItem('fe-genre');if(s&&[...sel.options].some(o=>o.value===s))sel.value=s}catch(e){}apply();
+const lang=document.getElementById('l'),q=document.getElementById('q'),n=document.getElementById('n');
+function apply(){const L=lang.value,t=q.value.toLowerCase();let k=0;const searching=t.length>1||L!=='all';
+ document.querySelectorAll('.genre').forEach(s=>{let any=false;s.querySelectorAll('.row').forEach(r=>{const ok=(L==='all'||r.dataset.lang===L)&&(t.length<2||r.textContent.toLowerCase().includes(t));r.classList.toggle('hidden',!ok);if(ok){any=true;k++}});
+  s.classList.toggle('hidden',!any);if(searching)s.open=any;});
+ n.textContent=searching?k+' text'+(k===1?'':'s'):'';}
+lang.addEventListener('change',apply);q.addEventListener('input',apply);apply();
 """
 JS_PAGE = """
 const links=[...document.querySelectorAll('.side a[href^="#"]')];const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
@@ -129,6 +162,7 @@ def render(path):
     mono = g('translation_language') == 'none'
     NOTE = re.compile(r'^(\d{1,3}\s?[a-c]?\)|\*+\)|\(\d{1,3}\)|[†‡]|<sup>[^<]*</sup>\s)')
     paras = [p.strip() for p in re.split(r'\n\s*\n', body) if p.strip()]
+    paged = bool(re.search(r'\[(p\. [^\]]+|scan \d+|PDF \d+)\]', body))      # texts without any page marks: boxes per section
     cards, toc = [], []
     cur = None
 
@@ -144,7 +178,7 @@ def render(path):
         hm = re.match(r'^(#{2,6}) (.*)$', p, re.S)
         if hm:
             lvl = len(hm.group(1)); txt = md_inline(hm.group(2).replace('\n', ' '))
-            if cur['e'] or cur['o']:                      # a heading opens a new box (a section, when there are no pages)
+            if not paged and (cur['e'] or cur['o']):     # no page marks at all: a heading opens a new box (one per section)
                 new_card(cur['label'])
             toc.append((lvl, re.sub('<[^>]+>', '', txt), cur['id']))
             cur['h'].append(f'<h{lvl}>{txt}</h{lvl}>'); continue
@@ -218,7 +252,9 @@ def render(path):
     orphan = [l for l in by_page if l not in seen]
     if orphan:
         out.append('<div class="gnotes"><h3>Notes on pages not shown separately</h3>' + ''.join(f'<p><b>{html.escape(l)}</b></p>' + ''.join(by_page[l]) for l in orphan) + '</div>')
-    out.append(f'</main></div></div><script>{JS_PAGE}</script></body></html>')
+    out.append(f'</main></div></div><script>{JS_PAGE}</script>'
+               + (f'<script>window.ANNOT={json.dumps({"repo": REPO, "branch": SITE.get("branch", "main"), "rel": rel, "base": depth})}</script><script src="{depth}annot.js"></script>' if REPO else '')
+               + '</body></html>')
     os.makedirs(os.path.dirname(f'{O}/{rel}.html'), exist_ok=True)
     open(f'{O}/{rel}.html', 'w').write('\n'.join(out))
     return rel, h, len(cards)
@@ -255,7 +291,7 @@ for gname in order:
                   f'{(" (" + html.escape(g("year")) + ")") if g("year") else ""}{(" · " + html.escape(g("collection"))) if g("collection") else ""}'
                   f'{("<span class=en>" + html.escape(g("title_en")) + "</span>") if g("title_en") else ""}</div>'
                   f'<div class="m">{g("pages")} pp.{chips}</div></div>')
-    rows.append(f'<section class="genre" data-genre="{html.escape(gname)}"><h2>{html.escape(gname)}</h2>{"".join(rr)}</section>')
+    rows.append(f'<details class="genre" data-genre="{html.escape(gname)}"><summary><h2>{html.escape(gname)}</h2><span class="cnt">{len(items)} text{"s" if len(items) != 1 else ""}</span></summary>{"".join(rr)}</details>')
 opts = ''.join(f'<option value="{html.escape(k)}">{html.escape(k)} ({len(genres[k])})</option>' for k in order)
 lopts = ''.join(f'<option value="{l}">{l}</option>' for l in langs)
 open(f'{O}/index.html', 'w').write(
@@ -264,7 +300,7 @@ open(f'{O}/index.html', 'w').write(
     f'<div class="top"><div class="in"><h1>Idealisms Working Group Shared Repository</h1><span class="sub">bilingual editions, original texts and notes</span></div></div>'
     f'<div class="wrap"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
     f'Translations are machine-made and model-reviewed, not human-revised; each page says where its text comes from.</p></div>'
-    f'<div class="controls"><select id="g"><option value="all">All genres</option>{opts}</select><select id="l"><option value="all">All languages</option>{lopts}</select>'
+    f'<div class="controls"><select id="l"><option value="all">All languages</option>{lopts}</select>'
     f'<input id="q" type="search" placeholder="search author or title"><span class="n" id="n"></span></div>'
     f'{"".join(rows)}</div><script>{JS_INDEX}</script></body></html>')
 print(f'{O}/index.html: {len(entries)} texts in {len(genres)} genres')

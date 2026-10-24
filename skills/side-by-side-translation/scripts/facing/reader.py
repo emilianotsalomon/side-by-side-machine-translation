@@ -30,7 +30,10 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .wrap{margin:0 auto;padding:1.2rem 1.4rem 5rem}.wrap.index{max-width:1100px}
 /* index */
 .hero{padding:2.4rem 0 1.2rem}.hero h1{font-size:2rem;font-weight:normal;margin:0 0 .3rem;letter-spacing:-.01em}.hero p{margin:0;color:var(--muted);max-width:60ch}
-.controls{display:flex;gap:.7rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.6rem;position:sticky;top:3.1rem;background:var(--paper);padding:.6rem 0;z-index:4}
+.controls{display:flex;gap:.9rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.6rem;position:sticky;top:3.1rem;background:var(--paper);padding:.6rem 0;z-index:4}
+.seg{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:.15rem;font-size:.82rem}
+.seg .lbl{color:var(--muted);padding:0 .7rem 0 .8rem;letter-spacing:.04em;text-transform:uppercase;font-size:.7rem}
+.seg button{font:inherit;font-size:.85rem;border:0;background:transparent;color:var(--muted);padding:.3rem .8rem;border-radius:999px;cursor:pointer}.seg button.on{background:var(--orig);color:var(--ink)}.seg button:hover{color:var(--ink)}
 select,input[type=search]{font:inherit;font-size:.95rem;padding:.45rem .7rem;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-size:.85rem;margin-left:auto}
 .genre{margin:0;border-bottom:1px solid var(--line)}.genre summary{display:flex;align-items:baseline;gap:1rem;padding:.9rem .2rem;cursor:pointer;list-style:none}
@@ -99,12 +102,22 @@ mark.an.cm{background:rgba(214,188,96,.18);box-shadow:0 1.5px 0 rgba(122,42,34,.
 @media(max-width:900px){.page{grid-template-columns:1fr}body.an-with-comments .page{grid-template-columns:1fr}.hdl{display:none!important}.an-gutter{position:static}.an-cm{position:static;width:auto;margin:.4rem 0}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
 """
 JS_INDEX = """
-const lang=document.getElementById('l'),q=document.getElementById('q'),n=document.getElementById('n');
-function apply(){const L=lang.value,t=q.value.toLowerCase();let k=0;const searching=t.length>1||L!=='all';
- document.querySelectorAll('.genre').forEach(s=>{let any=false;s.querySelectorAll('.row').forEach(r=>{const ok=(L==='all'||r.dataset.lang===L)&&(t.length<2||r.textContent.toLowerCase().includes(t));r.classList.toggle('hidden',!ok);if(ok){any=true;k++}});
-  s.classList.toggle('hidden',!any);if(searching)s.open=any;});
- n.textContent=searching?k+' text'+(k===1?'':'s'):'';}
-lang.addEventListener('change',apply);q.addEventListener('input',apply);apply();
+const q=document.getElementById('q'),n=document.getElementById('n'),list=document.getElementById('list'),pool=document.getElementById('pool'),seg=document.getElementById('by');
+const rows=[...pool.querySelectorAll('.row')];const st=k=>{try{return localStorage.getItem(k)}catch(e){return null}};const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+let by=st('fe-by')||'author';const open=new Set((st('fe-open-'+by)||'').split('|').filter(Boolean));
+const keyOf=r=>({author:r.dataset.author,genre:r.dataset.genre,lang:r.dataset.lang,century:r.dataset.century})[by];
+const sortOf=r=>by==='author'?[parseFloat(r.dataset.order||'0')||0,+r.dataset.year||9e9,r.textContent]:[r.dataset.sort,+r.dataset.year||9e9];
+function build(){list.innerHTML='';const groups=new Map();rows.forEach(r=>{const k=keyOf(r);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)});
+ const keys=[...groups.keys()].sort((a,b)=>{if(by==='author'){const sa=groups.get(a)[0].dataset.sort,sb=groups.get(b)[0].dataset.sort;return sa.localeCompare(sb)}if(a==='Other'||a==='undated')return 1;if(b==='Other'||b==='undated')return -1;return a.localeCompare(b)});
+ keys.forEach(k=>{const d=document.createElement('details');d.className='genre';d.dataset.key=k;if(open.has(k))d.open=true;
+  const items=groups.get(k).sort((x,y)=>{const a=sortOf(x),b=sortOf(y);for(let i=0;i<a.length;i++){if(a[i]<b[i])return -1;if(a[i]>b[i])return 1}return 0});
+  d.innerHTML='<summary><h2></h2><span class="cnt">'+items.length+' text'+(items.length===1?'':'s')+'</span></summary>';d.querySelector('h2').textContent=k;items.forEach(r=>d.appendChild(r));
+  d.addEventListener('toggle',()=>{if(d.open)open.add(k);else open.delete(k);sv('fe-open-'+by,[...open].join('|'))});list.appendChild(d)});apply();}
+function apply(){const t=q.value.toLowerCase();let k=0;const searching=t.length>1;
+ list.querySelectorAll('.genre').forEach(s=>{let any=false;s.querySelectorAll('.row').forEach(r=>{const ok=!searching||r.textContent.toLowerCase().includes(t);r.classList.toggle('hidden',!ok);if(ok){any=true;k++}});
+  s.classList.toggle('hidden',!any);if(searching)s.open=any;else s.open=open.has(s.dataset.key)});n.textContent=searching?k+' text'+(k===1?'':'s'):'';}
+seg.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b.dataset.by===by);b.onclick=()=>{by=b.dataset.by;sv('fe-by',by);open.clear();(st('fe-open-'+by)||'').split('|').filter(Boolean).forEach(x=>open.add(x));seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));build()}});
+q.addEventListener('input',apply);build();
 """
 JS_PAGE = """
 (function(){const pg=document.querySelector('.page');if(!pg)return;const st=k=>{try{return localStorage.getItem(k)}catch(e){return null}};const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
@@ -282,34 +295,32 @@ for f in sorted(glob.glob(f'{C}/*.md')) + sorted(glob.glob(f'{C}/*/*.md'), key=o
     entries.append((rel, h))
     print(rel, n, 'cards')
 
-genres = {}
-for rel, h in entries:
-    genres.setdefault(h.get('genre') or 'Other', []).append((rel, h))
-order = sorted(genres, key=lambda k: (k == 'Other', k))
-langs = sorted({h.get('original_language', '') for _, h in entries if h.get('original_language')})
+LANGN = {'de': 'German', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'la': 'Latin', 'hu': 'Hungarian', 'en': 'English', 'el': 'Greek', 'pt': 'Portuguese'}
 rows = []
-for gname in order:
-    items = sorted(genres[gname], key=lambda e: (e[1].get('collection', ''), e[1].get('author', '').split()[-1] if e[1].get('author') else '', e[1].get('year', '')))
-    rr = []
-    for rel, h in items:
-        g = lambda k: h.get(k, '')
-        mono = g('translation_language') == 'none'
-        chips = f'<span class="chip">{html.escape(g("original_language"))}{"" if mono else "→en"}</span>' + (
-            '<span class="chip">original only</span>' if mono else f'<span class="chip">{html.escape(g("edition_layout").split(" (")[0])}</span>')
-        rr.append(f'<div class="row" data-lang="{html.escape(g("original_language"))}"><div class="t"><a href="{rel}.html">{html.escape(g("author"))}, <i>{html.escape(g("title"))}</i></a>'
-                  f'{(" (" + html.escape(g("year")) + ")") if g("year") else ""}{(" · " + html.escape(g("collection"))) if g("collection") else ""}'
-                  f'{("<span class=en>" + html.escape(g("title_en")) + "</span>") if g("title_en") else ""}</div>'
-                  f'<div class="m">{g("pages")} pp.{chips}</div></div>')
-    rows.append(f'<details class="genre" data-genre="{html.escape(gname)}"><summary><h2>{html.escape(gname)}</h2><span class="cnt">{len(items)} text{"s" if len(items) != 1 else ""}</span></summary>{"".join(rr)}</details>')
-opts = ''.join(f'<option value="{html.escape(k)}">{html.escape(k)} ({len(genres[k])})</option>' for k in order)
-lopts = ''.join(f'<option value="{l}">{l}</option>' for l in langs)
+for rel, h in entries:
+    g = lambda k: h.get(k, '')
+    mono = g('translation_language') == 'none'
+    chips = f'<span class="chip">{html.escape(g("original_language"))}{"" if mono else "→en"}</span>' + (
+        '<span class="chip">original only</span>' if mono else f'<span class="chip">{html.escape(g("edition_layout").split(" (")[0])}</span>')
+    ym = re.search(r'\d{4}', g('year')); yr = int(ym.group(0)) if ym else 0
+    cent = f'{(yr - 1) // 100 + 1}th century' if yr else 'undated'
+    surname = (g('author').split()[-1] if g('author') else '~')
+    sortkey = f'{surname} {g("author")}'
+    order_ = h.get('order', '')
+    rows.append(f'<div class="row" data-author="{html.escape(g("author") or "—")}" data-sort="{html.escape(sortkey)}" data-genre="{html.escape(g("genre") or "Other")}" '
+                f'data-lang="{html.escape(LANGN.get(g("original_language"), g("original_language")) or "—")}" data-century="{cent}" data-year="{yr}" data-order="{html.escape(order_)}">'
+                f'<div class="t"><a href="{rel}.html">{html.escape(g("author"))}, <i>{html.escape(g("title"))}</i></a>'
+                f'{(" (" + html.escape(g("year")) + ")") if g("year") else ""}{(" · " + html.escape(g("collection"))) if g("collection") else ""}'
+                f'{("<span class=en>" + html.escape(g("title_en")) + "</span>") if g("title_en") else ""}</div>'
+                f'<div class="m">{g("pages")} pp.{chips}</div></div>')
 open(f'{O}/index.html', 'w').write(
     f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     f'<title>Idealisms Working Group Shared Repository</title><style>{CSS}</style></head><body>'
     f'<div class="top"><div class="in"><h1>Idealisms Working Group Shared Repository</h1><span class="sub">bilingual editions, original texts and notes</span></div></div>'
     f'<div class="wrap index"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
     f'Translations are machine-made and model-reviewed, not human-revised; each page says where its text comes from.</p></div>'
-    f'<div class="controls"><select id="l"><option value="all">All languages</option>{lopts}</select>'
+    f'<div class="controls"><div class="seg" id="by"><span class="lbl">Group by</span><button data-by="author" class="on">Author</button><button data-by="genre">Genre</button>'
+    f'<button data-by="lang">Language</button><button data-by="century">Century</button></div>'
     f'<input id="q" type="search" placeholder="search author or title"><span class="n" id="n"></span></div>'
-    f'{"".join(rows)}</div><script>{JS_INDEX}</script></body></html>')
-print(f'{O}/index.html: {len(entries)} texts in {len(genres)} genres')
+    f'<div id="list"></div><div id="pool" class="hidden">{"".join(rows)}</div></div><script>{JS_INDEX}</script></body></html>')
+print(f'{O}/index.html: {len(entries)} texts')

@@ -1,0 +1,8 @@
+{
+  "name": "side-by-side-translation",
+  "version": "1.0.0",
+  "description": "Bilingual facing editions from scanned books: a photocopy edition (original page left, new English right) or a clean-text edition (both columns retypeset, original pagination in the margins). Local OCR (Tesseract/poppler), headless Chrome typesetting, lean translator and reviewer agents.",
+  "author": { "name": "Emiliano Salomon" },
+  "keywords": ["translation", "facing-page", "parallel-text", "bilingual", "scanned-books", "Kant", "Hegel", "OCR"],
+  "license": "Private — for the research team's use"
+}

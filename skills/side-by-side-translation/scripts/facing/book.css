@@ -1,0 +1,165 @@
+/* Facing edition — right-hand (English) half of each sheet; sheet size comes from book.json (build.py).
+   The left half is left blank here; merge.py stamps the scan into it.  Book-specific classes: WORK/extra.css. */
+html, body { margin: 0; padding: 0; background: #fff; }
+@font-face { font-family: "BMinus"; src: local("Times New Roman"), local("TimesNewRomanPSMT"); unicode-range: U+2212; }
+body { font-family: "BMinus", "Hoefler Text", "Iowan Old Style", Georgia, serif; color: #111;
+       -webkit-print-color-adjust: exact; font-variant-ligatures: common-ligatures; }
+.sheet { position: relative; width: 960pt; height: 760pt; overflow: hidden; page-break-after: always; break-after: page; }
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+.body { position: absolute; top: 0; height: 748pt; display: flex; flex-direction: column;
+        font-size: 12pt; line-height: 14.9pt; hyphens: auto; -webkit-hyphens: auto; }
+.body > * { flex: none; margin: 0; }
+.body p { text-align: justify; text-indent: 0; }
+.body p.par { text-indent: 1.5em; }
+.body p.c { text-align: center; text-indent: 0; hyphens: manual; }
+.body p.r { text-align: right; }
+
+/* running head: centred folio with a short rule under it, as in the print */
+.rh { text-align: center !important; font-size: .9em; line-height: 1.2; }
+.rh span { display: inline-block; min-width: 3em; }
+.rh.plain span { border-bottom: 0; }
+/* printer's signature at the foot of a sheet */
+.sig { font-size: 9pt; line-height: 11pt; text-align: center !important; }
+.cw { text-align: right !important; }
+
+/* headings */
+h1, h2, h3, h4 { font-weight: normal; text-align: center; margin: 0; hyphens: manual; }
+h1 { font-size: 1.5em; line-height: 1.2; letter-spacing: .04em; }
+h2 { font-size: 1.25em; line-height: 1.2; letter-spacing: .03em; }
+h3 { font-size: 1em; line-height: 1.25; letter-spacing: .03em; }
+h4 { font-size: 10.5pt; line-height: 12.6pt; font-style: italic; }
+.sp { letter-spacing: .12em; }
+.sc { font-variant: small-caps; letter-spacing: .03em; }
+.big { font-size: 1.3em; }
+.small { font-size: .85em; }
+hr.rule { border: 0; border-top: 0.6pt solid #222; width: 100%; margin: 0; }
+hr.short { border: 0; border-top: 0.8pt solid #222; width: 22%; margin: 0 auto; }
+hr.dbl { border: 0; border-top: 2.4pt double #222; width: 100%; margin: 0; }
+
+/* epigraphs / scripture mottoes */
+.motto { font-size: .9em; line-height: 1.25; }
+.motto.r, .src { text-align: right !important; }
+
+/* footnotes: short rule at the left, notes in smaller type */
+hr.fn { border: 0; border-top: 0.7pt solid #222; width: 25%; margin: 0; }
+.note { font-size: .88em; line-height: 1.22; padding-left: 1.2em; text-indent: -1.2em !important; }
+
+/* contents and errata */
+.toc { display: flex; text-indent: 0; text-align: left !important; }
+.toc .d { flex: 1; overflow: hidden; white-space: nowrap; }
+.toc .d::after { content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ."; }
+.toc .n { padding-left: 4pt; white-space: nowrap; }
+.err { display: grid; grid-template-columns: 6.5em 1fr; font-size: 9.6pt; line-height: 11.4pt; text-align: left !important; }
+.sheet.bad .body { outline: 2pt solid red; }
+
+/* formulas, fractions, columns (Bardili 1800) */
+.x1 { font-size: 1.25em; } .x2 { font-size: 1.6em; } .x3 { font-size: 2.3em; } .x0 { font-size: .85em; }
+.ls { letter-spacing: .25em; }
+hr.swell { border: 0; height: 2.2pt; width: 100%; margin: 0;
+  background: radial-gradient(ellipse at center, #222 0%, #222 45%, rgba(0,0,0,0) 72%); }
+hr.swell.s { width: 22%; margin: 0 auto; }
+.dc::first-letter { float: left; font-size: 2.6em; line-height: .8; padding: 1pt 3pt 0 0; }
+/* fractions in Bardili's formulas: ( numerator / denominator ) */
+.frac { display: inline-block; vertical-align: middle; text-align: center; line-height: 1.05; margin: 0 .1em; }
+.frac > span { display: block; padding: 0 .2em; }
+.frac > span + span { border-top: 0.7pt solid #111; }
+.paren { font-size: 2.1em; vertical-align: middle; line-height: .8; font-weight: 300; }
+.formula { text-align: center !important; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.2em; text-align: left !important; }
+.cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; column-gap: .8em; text-align: left !important; }
+.ind { padding-left: 2em; }
+.motto { padding-left: 3em; }
+/* "Anm." remarks: block indented, first line further in, as in the print */
+.body p.anm { padding-left: 1.1em; text-indent: 1.2em; }
+.body p.num { text-indent: 1.4em; }
+.sig { font-size: .75em !important; }
+.fx { white-space: nowrap; }
+.cols > *, .cols3 > * { margin: 0; text-align: left; text-indent: 0; }
+.hang { padding-left: 1em; text-indent: -1em !important; }
+.brace { display: inline-flex; align-items: center; gap: .15em; }
+.brace > .rb { font-size: 3.2em; line-height: 1; font-weight: 200; }
+.ctr { text-align: center !important; }
+.frac.nobar > span + span { border-top: 0; }
+/* signature line with the folio at the foot of section openings */
+.sigf { display: flex; justify-content: space-between; font-size: .8em; line-height: 1.1; padding: 0 2.2em 0 2.2em; text-indent: 0 !important; }
+.sigf .f { font-size: 1.15em; }
+hr.heavy { border: 0; border-top: 2.2pt solid #222; width: 100%; margin: 0; }
+hr.dots { border: 0; border-top: 1.6pt dotted #222; width: 34%; margin: 0 auto; }
+.note { font-size: .9em; }
+
+/* ---- variant classes (first used in Rosenkranz 1844; later rules below override where they clash) ---- */
+/* running head: folio at the outer edge, title centred */
+.body p.rh { display: flex; justify-content: space-between; align-items: baseline; text-indent: 0;
+  font-size: 11pt; line-height: 13pt; text-align: left !important; }
+.rh span { display: block; min-width: 0; border: 0; }
+.rh .t { flex: 1; text-align: center; letter-spacing: .02em; }
+.rh .f { width: 2.6em; font-size: 1.1em; }
+.rh .f:last-child { text-align: right; }
+/* chapter headings inside the running text */
+h3.ch { font-size: 1.15em; line-height: 1.25; letter-spacing: .03em; font-weight: 600; }
+h2.bk { font-size: 24pt; line-height: 28pt; letter-spacing: .18em; font-weight: 600; }
+.dc::first-letter { font-size: 2.55em; line-height: .78; padding: 2pt 3pt 0 0; font-weight: 600; }
+/* printer's signature (sheet number) at the foot, right of centre */
+.body p.sig { text-align: right !important; padding-right: 24%; font-size: .85em !important; line-height: 1.1; }
+/* verse: one p.v per stanza, lines separated by <br>; indented lines in span.vi */
+.body p.v { text-align: left; padding-left: 2.2em; text-indent: 0; hyphens: manual; }
+.vi { padding-left: 1.6em; }
+/* translated from Latin (Hegel's Latin diary entries etc.) */
+.lat { font-variant: small-caps; font-size: .8em; letter-spacing: .04em; color: #555; }
+.body p.note { font-size: .82em; line-height: 1.22; padding-left: 0; text-indent: 1.2em !important; }
+hr.fn { width: 18%; border-top-width: .6pt; }
+hr.thin { border: 0; border-top: .7pt solid #222; width: 16%; margin: 0 auto; }
+.toc { font-size: .95em; }
+.toch { font-size: .75em !important; text-align: right !important; }
+.tocn { padding-left: 1.8em; text-indent: -1.8em; }
+.bold { font-weight: 700; }
+.body p.err { display: grid; grid-template-columns: 8.2em 1fr; column-gap: .6em; font-size: .92em; text-align: left !important; }
+.err > span:first-child { white-space: nowrap; }
+/* contents rows: title (may wrap) · dotted leader · page */
+.body p.toc { display: flex; align-items: last baseline; text-align: left !important; font-size: .95em; }
+.toc .d { flex: 0 1 auto; } .toc .ld { flex: 1 0 1.5em; border-bottom: 1.2pt dotted #444; margin: 0 .3em .22em .3em; }
+.toc .n { white-space: nowrap; min-width: 1.6em; text-align: right; } .toc .rn { min-width: 2.3em; flex: none; }
+.toc .d { overflow: visible; white-space: normal; } .toc .d::after { content: none; }
+
+/* ---- current defaults (Bolzano 1841): centred folio, star signatures, swelled rules, hanging notes ---- */
+/* running head = the centred folio "— 20 —" */
+.body p.rh { display: block; text-align: center !important; font-size: 1em; line-height: 1.2; letter-spacing: .04em; }
+/* large initial on the first line (not a drop cap) */
+.body p.dc::first-letter { float: none; font-size: 1.55em; line-height: 0; padding: 0; font-weight: 600; }
+/* printer's signatures: "1*" right of centre; sheet line = short title + sheet number */
+.body p.sig { text-align: right !important; padding-right: 27%; font-size: .85em !important; line-height: 1.1; }
+.body p.sigf { display: flex; justify-content: flex-start; padding: 0; font-size: .7em; line-height: 1.1; text-align: left !important; }
+.sigf .t { flex: none; width: 73%; letter-spacing: .01em; }
+.sigf .f { font-size: 1.2em; }
+.body p.cw { text-align: right !important; }
+/* part titles */
+.body h2.pn { font-size: 1.9em; line-height: 1.15; font-weight: 700; letter-spacing: 0; }
+.body h1.pt { font-size: 1.5em; line-height: 1.2; font-weight: 700; letter-spacing: 0; }
+/* title page */
+.tp { text-align: center !important; hyphens: manual; text-indent: 0; }
+.tp.a { font-size: 17pt; letter-spacing: .3em; font-weight: 600; }
+.tp.b { font-size: 34pt; line-height: 1.05; font-weight: 700; letter-spacing: -.005em; }
+.tp.c { font-size: 12pt; letter-spacing: .12em; }
+.tp.d { font-size: 22pt; line-height: 1.1; font-weight: 600; }
+.tp.e { font-size: 15pt; line-height: 1.35; }
+.tp.f { font-size: 15pt; letter-spacing: .3em; font-weight: 600; }
+.tp.g { font-size: 12pt; letter-spacing: .16em; }
+hr.tprule { border: 0; border-top: 3.2pt solid #222; border-bottom: .6pt solid #222; height: 1.6pt; width: 100%; margin: 0; }
+/* section rules: swelled rule, short (between sections) or medium (end of a part) */
+hr.swell.m { width: 34%; margin: 0 auto; }
+/* footnotes: indented block, the mark hanging */
+.body p.note { font-size: .9em; line-height: 1.22; padding-left: 2.7em; text-indent: -1.75em !important; }
+.body p.note.cont { text-indent: 0 !important; }
+/* numbered points: number hanging */
+.body p.item { padding-left: 1.75em; text-indent: -1.45em !important; }
+/* schematic propositions / formulas set on their own lines */
+.body p.sch { text-align: left !important; padding-left: 8.5em; text-indent: 0; hyphens: manual; }
+.body p.formula { text-align: center !important; text-indent: 0; hyphens: manual; }
+.eqs { display: grid; grid-template-columns: auto auto; justify-content: center; column-gap: 1.4em; text-align: left !important; text-indent: 0 !important; padding-left: 0 !important; }
+.eqs > span { white-space: nowrap; }
+.body p.orn { text-align: center !important; text-indent: 0; line-height: 0; }
+.orn img { display: inline-block; }
+/* lining figures throughout (Hoefler's old-style 1 reads as a roman I next to vol./§ numbers) */
+body { font-variant-numeric: lining-nums; }
+.body p.note.eqs, .body p.eqs { padding-left: 0 !important; text-indent: 0 !important; }
+.eqs > span { text-indent: 0 !important; }

@@ -1,0 +1,18 @@
+#!/bin/sh
+# py — run a pipeline script with a Python 3 that has numpy, Pillow and pypdf.
+#   scripts/py bundle.py work s020 s021        (from the book folder; the scripts live next to this launcher)
+# Order tried: $FACING_PYTHON · BOOK/.venv · _facing-pipeline/.venv · python3 on PATH · the usual system paths.
+# Every pipeline script, brief and reference calls Python through this launcher, so nothing else in the skill
+# depends on where Python happens to live on a given machine.  doctor.py says what is missing.
+D=$(cd "$(dirname "$0")" && pwd)
+S="$1"; shift
+case "$S" in /*|-*) ;; *) S="$D/$S" ;; esac    # -c / -m pass through
+for c in "$FACING_PYTHON" "$D/../.venv/bin/python3" "$D/../../.venv/bin/python3" "$D/../../../.venv/bin/python3" \
+         python3 /usr/bin/python3 /opt/homebrew/bin/python3 /usr/local/bin/python3 python; do
+  [ -n "$c" ] || continue
+  command -v "$c" >/dev/null 2>&1 || continue
+  if "$c" -c "import numpy, PIL, pypdf" >/dev/null 2>&1; then exec "$c" "$S" "$@"; fi
+done
+echo "py: no Python 3 with numpy, Pillow and pypdf found." >&2
+echo "    fix:  python3 -m pip install --user numpy pillow pypdf      (or run scripts/facing/doctor.py --fix)" >&2
+exit 127

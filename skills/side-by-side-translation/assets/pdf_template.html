@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{TITLE}}</title>
+<style>
+@font-face { font-family:'GreekFB'; src: local('Palatino-Roman'), local('Palatino'); unicode-range: U+0370-03FF, U+1F00-1FFF; size-adjust: 88%; }
+@font-face { font-family:'GreekFB'; font-style: italic; src: local('Palatino-Italic'); unicode-range: U+0370-03FF, U+1F00-1FFF; size-adjust: 88%; }
+@font-face { font-family:'GreekFB'; font-weight: bold; src: local('Palatino-Bold'); unicode-range: U+0370-03FF, U+1F00-1FFF; size-adjust: 88%; }
+{{FONT_CSS}}
+@page { size: {{PAGE_W}}px {{PAGE_H}}px; margin: 0; }
+html, body { margin:0; padding:0; background:#fff; }
+body { font-family:'GreekFB', '{{FONT_FAMILY}}', Georgia, serif; font-size:{{FS}}px; font-weight:{{FONT_WEIGHT}}; line-height:{{LH}}px; color:#000;
+       font-kerning:normal; font-variant-ligatures:common-ligatures; }
+.page { position:relative; width:{{PAGE_W}}px; height:{{PAGE_H}}px; overflow:hidden; break-after:page; page-break-after:always; }
+.page:last-child { break-after:auto; page-break-after:auto; }
+.rh { position:absolute; height:{{LH}}px; line-height:{{LH}}px; }
+.rh .l { position:absolute; left:0; } .rh .r { position:absolute; right:0; }
+.rh-rule { position:absolute; border-top:0.7px solid #000; }
+.tb { position:absolute; }
+.tb .author { font-size:{{FS_AUTHOR}}px; line-height:{{LH_AUTHOR}}px; }
+.tb .work { font-size:{{FS_WORK}}px; line-height:{{LH_WORK}}px; }
+.tb .credit { font-size:{{FS}}px; line-height:{{LH}}px; margin-top:12px; }
+.sc { font-variant-caps:small-caps; }
+sup { font-size:{{FS_SUP}}px; line-height:0; vertical-align:baseline; position:relative; top:-0.55em; }
+/* measured paragraphs (hidden) and placed lines */
+p.txt { text-align:justify; text-indent:1.35em; hyphens:auto; -webkit-hyphens:auto; hyphenate-limit-chars:5 2 2; margin:0; }
+p.txt.flush { text-indent:0; }
+p.h1 { font-variant-caps:small-caps; letter-spacing:0.02em; margin:{{LH}}px 0 {{LH}}px 0; hyphens:manual; }
+p.h2 { font-style:italic; margin:{{LH}}px 0 {{LH}}px 0; hyphens:manual; }
+p.h3 { margin:{{LH}}px 0 {{LH}}px 0; hyphens:manual; text-align:center; letter-spacing:0.04em; }
+/* epigraphs (--kind IDX=epi) and their attributions (epa) */
+p.epi { font-size:{{FS_FN2}}px; padding-left:3.5em; text-indent:0; text-align:left; hyphens:auto; -webkit-hyphens:auto; margin:{{LH}}px 0 0 0; }
+p.epa { font-size:{{FS_FN2}}px; text-indent:0; text-align:right; margin:0 0 {{LH}}px 0; }
+/* synopsis / outline lines (--kind IDX=syn): smaller, left-aligned, hanging indent */
+p.quo { font-size:{{FS_FN2}}px; line-height:{{LH_FN2}}px; text-align:justify; text-indent:1.35em; padding:0 1.5em; hyphens:auto; -webkit-hyphens:auto; margin:0; }
+p.quo.gap { margin-top:{{LH_FN2}}px; }
+p.quo.gapb { margin-bottom:{{LH_FN2}}px; }
+p.orn { text-indent:0; text-align:center; margin:{{LH}}px 0 {{LH}}px 0; }
+p.ver { padding-left:2.5em; text-indent:0; text-align:left; hyphens:manual; margin:0; }
+p.syn { font-size:{{FS_FN2}}px; padding-left:1.5em; text-indent:-1.5em; text-align:left; hyphens:manual; margin:0; }
+p.h1 + p.h1, p.h2 + p.h2, p.h3 + p.h3 { margin-top:0; }
+:lang(en) p.txt, :lang(en) p.fn { hyphenate-limit-chars:6 3 3; }
+:lang(es) p.txt, :lang(es) p.fn, :lang(de) p.txt, :lang(de) p.fn { hyphenate-limit-chars:6 2 3; }
+p.h1:not(:last-child), p.h2:not(:last-child), p.h3:not(:last-child) { margin-bottom:0; }
+p.fn { font-size:{{FS_FN2}}px; line-height:{{LH_FN2}}px; text-align:justify; text-indent:1.35em; hyphens:auto; -webkit-hyphens:auto; hyphenate-limit-chars:5 2 2; margin:0; }
+p.fn.gap { margin-top:{{LH_FN2}}px; }
+.pg { font-style:normal; }
+.pbar { display:inline-block; width:0; height:0.95em; border-left:0.8px solid #a33; vertical-align:-0.15em; margin:0 2px; }
+.mpg { position:absolute; height:{{LH}}px; line-height:{{LH}}px; font-size:9.5px; font-style:normal; font-variant-numeric:lining-nums; color:#000; white-space:nowrap; }
+.line { position:absolute; height:{{LH}}px; line-height:{{LH}}px; white-space:nowrap; text-align:justify; text-align-last:justify; }
+.line.last { text-align:left; text-align-last:left; }
+.line.first { text-indent:1.35em; }
+.line.flush { text-indent:0; }
+.line.h1 { font-variant-caps:small-caps; letter-spacing:0.02em; text-align:left; text-align-last:left; }
+.line.h2 { font-style:italic; text-align:left; text-align-last:left; }
+.line.h3 { text-align:center; text-align-last:center; letter-spacing:0.04em; }
+.line.epi { box-sizing:border-box; font-size:{{FS_FN2}}px; padding-left:3.5em; text-align:left; text-align-last:left; }
+.line.syn { box-sizing:border-box; font-size:{{FS_FN2}}px; padding-left:1.5em; text-align:left; text-align-last:left; }
+.line.syn.first { text-indent:-1.5em; }
+.line.quo { box-sizing:border-box; font-size:{{FS_FN2}}px; height:{{LH_FN2}}px; line-height:{{LH_FN2}}px; padding:0 1.5em; }
+.line.quo.first { text-indent:1.35em; }
+.line.orn { text-align:center; text-align-last:center; text-indent:0; }
+.line.ver { box-sizing:border-box; padding-left:2.5em; text-align:left; text-align-last:left; }
+.line.epa { font-size:{{FS_FN2}}px; text-align:right; text-align-last:right; }
+.line.fn { font-size:{{FS_FN2}}px; height:{{LH_FN2}}px; line-height:{{LH_FN2}}px; }
+/* page footnotes (--page-notes) */
+sup.fr { font-size:{{FS_SUP}}px; }
+.pnrule { position:absolute; border-top:0.7px solid #000; width:110px; }
+.line.pn { font-size:{{FS_FN2}}px; height:{{LH_FN2}}px; line-height:{{LH_FN2}}px; }
+.line.pn sup { font-size:8px; top:-0.45em; }
+/* editorial footnotes (front page) */
+.efn { position:absolute; font-size:{{FS_FN}}px; line-height:{{LH_FN}}px; text-align:justify; hyphens:auto; -webkit-hyphens:auto; }
+.efn .fnrule { width:330px; border-top:0.7px solid #000; margin-bottom:5px; }
+.efn p { margin:0; text-indent:1.35em; }
+.efn sup { font-size:7.5px; top:-0.5em; }
+/* table of contents */
+.toc { position:absolute; font-size:{{FS_TOC}}px; line-height:{{LH_TOC}}px; }
+.toc-head { display:grid; grid-template-columns:{{COL_L_W}}px {{GUTTER}}px {{COL_R_W}}px; font-variant-caps:small-caps; letter-spacing:0.02em; padding-bottom:4px; border-bottom:0.7px solid #000; margin-bottom:8px; }
+.toc-head .sub { float:right; font-variant-caps:normal; font-style:italic; letter-spacing:0; font-size:{{FS_FN}}px; }
+.toc-e { display:grid; grid-template-columns:{{COL_L_W}}px {{GUTTER}}px {{COL_R_W}}px; margin-bottom:3px; }
+.toc-e .n { float:right; padding-left:12px; font-variant-numeric:tabular-nums; }
+.toc-e .src { float:right; padding-left:12px; font-variant-numeric:tabular-nums; }
+.toc-e.l1 { margin-top:9px; }
+.toc-e.l1 .c { font-variant-caps:small-caps; letter-spacing:0.02em; }
+.toc-e.l2 .c { padding-left:1.6em; font-style:italic; }
+.toc-e.l2 .c .src, .toc-e.l2 .c .n { font-style:normal; }
+.toc-e.l3 .c { padding-left:3.2em; }
+#mL, #mR, #mT { position:absolute; top:0; left:-5000px; visibility:hidden; }
+/* facing-pages (book) mode */
+.rh .c { position:absolute; left:0; right:0; text-align:center; }
+.facing .toc-head, .facing .toc-e { grid-template-columns:1fr; }
+.facing .toc-e { margin-bottom:5px; }
+.facing .toc-e .en { padding-left:1.6em; }
+.facing .toc-e.l1 .en { font-variant-caps:normal; letter-spacing:0; font-style:italic; }
+.facing .toc-e.l2 .en { padding-left:3.2em; font-style:normal; }
+.facing .toc-e.l3 .en { padding-left:4.8em; }
+.facing .tb { text-align:center; }
+.facing .tb .work { margin-top:6px; }
+.facing .tb .edition { font-size:{{FS}}px; line-height:{{LH}}px; margin-top:{{LH}}px; font-style:italic; }
+.facing .efn { font-size:{{FS}}px; line-height:{{LH}}px; }
+.facing .efn .fnrule { display:none; }
+.facing .efn .nh { font-variant-caps:small-caps; letter-spacing:0.02em; text-indent:0; margin-bottom:{{LH}}px; }
+.facing .efn p { text-indent:1.35em; }
+
+</style>
+</head>
+<body>
+<div id="mL"></div><div id="mR"></div><div id="mT"></div>
+<div id="pages"></div>
+<script>
+const CONFIG = {{CONFIG_JSON}};
+const ROWS = {{ROWS_JSON}};
+
+(async () => {
+await Promise.all(CONFIG.font_loads.map(f => document.fonts.load(f)));
+await document.fonts.ready;
+
+const LH = CONFIG.line_height, LH_FN = CONFIG.fn_line_height;
+const PAGE_W = CONFIG.page_w, PAGE_H = CONFIG.page_h;
+const MX = CONFIG.margin_x;
+const BLOCK_W = PAGE_W - 2 * MX;
+const TEXT_TOP = CONFIG.text_top, TEXT_BOTTOM = PAGE_H - CONFIG.margin_bottom;
+const GUTTER = CONFIG.gutter;
+const colTotal = BLOCK_W - GUTTER;
+const wL = Math.round(colTotal * CONFIG.left_ratio), wR = colTotal - wL;
+const FACING = !!CONFIG.facing, M_IN = CONFIG.m_in || 0, M_OUT = CONFIG.m_out || 0;
+const TEXT_W = FACING ? PAGE_W - M_IN - M_OUT : BLOCK_W;
+const COL_L = FACING ? {x: M_OUT, w: TEXT_W} : {x: MX, w: wL};     // verso: text block sits against the outside (left) margin
+const COL_R = FACING ? {x: M_IN, w: TEXT_W} : {x: MX + wL + GUTTER, w: wR};   // recto: inside (gutter) margin on the left
+if (FACING) document.body.classList.add('facing');
+const HEAD = {h1: 1, h2: 1, h3: 1};
+
+function mk(tag, cls, html, lang) { const e = document.createElement(tag); if (cls) e.className = cls; if (lang) e.lang = lang; e.innerHTML = html; return e; }
+
+// ── Build measurable blocks ──
+const rows = ROWS.map((r, idx) => {
+  const lh = (r.kind === 'fn' || r.kind === 'quo') ? LH_FN : LH;
+  const build = (paras, lang) => {
+    const box = document.createElement('div');
+    paras.forEach((html, j) => {
+      let cls;
+      if (HEAD[r.kind]) cls = r.kind;
+      else if (r.kind === 'fn') cls = 'fn' + (j === 0 && r.gap !== false ? ' gap' : '');
+      else if (r.kind === 'quo') cls = 'quo' + (j === 0 && r.gap ? ' gap' : '') + (j === paras.length - 1 && r.gapb ? ' gapb' : '');
+      else if (r.kind === 'epi' || r.kind === 'epa' || r.kind === 'syn' || r.kind === 'orn' || r.kind === 'ver') cls = r.kind;
+      else cls = 'txt' + ((j === 0 && r.flush) ? ' flush' : '');
+      box.appendChild(mk('p', cls, html, lang));
+    });
+    return box;
+  };
+  return {kind: r.kind, pb: !!r.pb, lh, toc: r.toc || null, idx,
+          L: build(r.left, CONFIG.lang_left), R: build(r.right, CONFIG.lang_right)};
+});
+
+const mL = document.getElementById('mL'), mR = document.getElementById('mR');
+mL.style.width = COL_L.w + 'px'; mR.style.width = COL_R.w + 'px';
+function measure(el, box, lh) {
+  box.appendChild(el);
+  let h = 0;
+  el.querySelectorAll('p').forEach(p => { const cs = getComputedStyle(p); h += p.getBoundingClientRect().height + parseFloat(cs.marginBottom) + parseFloat(cs.marginTop); });
+  const n = Math.round(h / lh);
+  if (Math.abs(h - n * lh) > 0.5) console.warn('WARN non-integer line height', h, el.textContent.slice(0, 40));
+  return n;
+}
+function extractLines(box, lh) {
+  const out = [];
+  box.querySelectorAll('p').forEach(p => {
+    const mt = Math.round(parseFloat(getComputedStyle(p).marginTop) / lh);
+    for (let k = 0; k < mt; k++) out.push({html: '', last: true, first: false, flush: true, cls: 'blank'});
+    const pTop = p.getBoundingClientRect().top;
+    const segs = [];
+    const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const t = node.data; let cur = -1, segStart = 0;
+      for (let i = 0; i < t.length; i++) {
+        const r = document.createRange(); r.setStart(node, i); r.setEnd(node, i + 1);
+        const rects = Array.from(r.getClientRects()); if (!rects.length) continue;
+        const li = Math.round((Math.max(...rects.map(x => x.top)) - pTop) / lh);
+        if (li !== cur) { if (cur >= 0) segs.push({li: cur, node, s: segStart, e: i}); cur = li; segStart = i; }
+      }
+      if (cur >= 0) segs.push({li: cur, node, s: segStart, e: t.length});
+    }
+    const n = segs.length ? Math.max(...segs.map(x => x.li)) + 1 : 0;
+    const lines = [];
+    for (let li = 0; li < n; li++) {
+      const ss = segs.filter(x => x.li === li);
+      let parts = ss.map(x => ({text: x.node.data.slice(x.s, x.e), parent: x.node.parentNode === p ? null : x.node.parentNode}));
+      const raw = parts.map(x => x.text).join('');
+      if (parts.length) { parts[0].text = parts[0].text.replace(/^\s+/, ''); parts[parts.length - 1].text = parts[parts.length - 1].text.replace(/\s+$/, ''); }
+      parts = parts.filter(x => x.text.length);
+      parts.raw = raw;
+      lines.push(parts);
+    }
+    const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const wrap = (x) => {
+      if (!x.parent) return esc(x.text);
+      const tag = x.parent.tagName.toLowerCase();
+      const cls = x.parent.className ? ' class="' + x.parent.className + '"' : '';
+      return '<' + tag + cls + '>' + esc(x.text) + '</' + tag + '>';
+    };
+    const cls = ['h1', 'h2', 'h3', 'fn', 'epi', 'epa', 'syn', 'orn', 'quo', 'ver'].find(c => p.classList.contains(c)) || 'txt';
+    for (let li = 0; li < n; li++) {
+      const parts = lines[li];
+      let html = parts.map(wrap).join('');
+      if (li < n - 1 && parts.length && lines[li + 1].length) {
+        const a = parts.raw, b = lines[li + 1].raw;
+        if (!/[\s\-‐–—]$/.test(a) && /[\p{L}\p{N}]$/u.test(a) && !/^\s/.test(b)) html += '-';   // a word split by hyphenation, not a printed line break after punctuation
+      }
+      if (!html) console.warn('WARN empty line ' + li + '/' + n + ' in: ' + p.textContent.slice(0, 60) + ' | raw=' + JSON.stringify(parts.raw));
+      out.push({html, last: li === n - 1, first: li === 0, flush: p.classList.contains('flush') || cls !== 'txt', cls});
+    }
+    const mb = Math.round(parseFloat(getComputedStyle(p).marginBottom) / lh);
+    for (let k = 0; k < mb; k++) out.push({html: '', last: true, first: false, flush: true, cls: 'blank'});
+  });
+  return out;
+}
+// --page-notes: each note measured at its column's width, in note type
+const PN = !!CONFIG.page_notes, PN_SEP = 12;
+if (PN) ROWS.forEach((r, i) => {
+  ['L', 'R'].forEach(k => {
+    const list = r['notes' + k] || [];
+    rows[i]['pn' + k] = list.map(n => {
+      const box = document.createElement('div');
+      n.paras.forEach((html, j) => box.appendChild(mk('p', 'fn', (j === 0 ? '<sup class="nn">' + n.id + '</sup> ' : '') + html, k === 'L' ? CONFIG.lang_left : CONFIG.lang_right)));
+      const host = k === 'L' ? mL : mR; host.appendChild(box);
+      const lines = extractLines(box, LH_FN).filter(x => x.cls !== 'blank');
+      box.remove();
+      return {id: n.id, lines};
+    });
+  });
+});
+rows.forEach(r => {
+  r.nL = measure(r.L, mL, r.lh); r.nR = measure(r.R, mR, r.lh); r.H = Math.max(r.nL, r.nR);
+  r.linesL = extractLines(r.L, r.lh); r.linesR = extractLines(r.R, r.lh);
+  if (r.linesL.length !== r.nL || r.linesR.length !== r.nR)
+    console.warn('WARN line count mismatch', r.linesL.length, r.nL, r.linesR.length, r.nR, r.L.textContent.slice(0, 40));
+});
+
+// ── Body pages (numbered later, after the front matter is known) ──
+const pagesEl = document.getElementById('pages');
+const pages = [];
+function runningHead(p, num, side) {
+  let rh, x = MX, w = BLOCK_W;
+  if (FACING) {   // page number on the outside; author on the verso, work on the recto
+    x = side === 'recto' ? M_IN : M_OUT; w = TEXT_W;
+    rh = side === 'recto' ? mk('div', 'rh', '<span class="c">' + (CONFIG.work_line || '') + '</span><span class="r">' + num + '</span>')
+                           : mk('div', 'rh', '<span class="l">' + num + '</span><span class="c">' + (CONFIG.author || '') + '</span>');
+  } else rh = mk('div', 'rh', '<span class="l">' + CONFIG.running_head + '</span><span class="r">' + num + '</span>');
+  rh.style.left = x + 'px'; rh.style.width = w + 'px'; rh.style.top = (TEXT_TOP - 48) + 'px';
+  const rule = mk('div', 'rh-rule', '');
+  rule.style.left = x + 'px'; rule.style.width = w + 'px'; rule.style.top = (TEXT_TOP - 31) + 'px';
+  p.appendChild(rh); p.appendChild(rule);
+  return rh;
+}
+function newPage() {
+  const p = document.createElement('div'); p.className = 'page'; pagesEl.appendChild(p);
+  const pg = {el: p, idx: pages.length, top: TEXT_TOP, usedPx: 0, capPx: TEXT_BOTTOM - TEXT_TOP, notes: {L: [], R: []}};
+  pg.rh = runningHead(p, '');
+  if (PN && pages.length) { const prev = pages[pages.length - 1]; renderNotes(prev); ['L', 'R'].forEach(k => { pg.notes[k] = carry[k]; carry[k] = []; }); }
+  pages.push(pg); return pg;
+}
+// ── page notes: queue per column; lines that do not fit are carried to the next page ──
+const carry = {L: [], R: []};
+function noteIdsIn(row, k, start, n) {
+  const ids = [], src = row['lines' + k];
+  for (let li = start; li < Math.min(start + n, src.length); li++) {
+    const re = /<sup class="fr">(\d+)<\/sup>/g; let m;
+    while ((m = re.exec(src[li].html))) ids.push(+m[1]);
+  }
+  return ids;
+}
+function notesPx(nLines) { return nLines ? nLines * LH_FN + PN_SEP : 0; }
+function pageNoteLines(pg, k) { return pg.notes[k].reduce((a, x) => a + x.lines.length, 0); }
+function newNoteLines(row, k, start, n) {
+  const ids = noteIdsIn(row, k, start, n); const list = row['pn' + k] || [];
+  return ids.map(id => list.find(x => x.id === id)).filter(Boolean);
+}
+function renderNotes(pg) {
+  // what fits under the body goes here; the rest of a note carries to the next page
+  const room = pg.capPx - pg.usedPx;
+  [['L', COL_L], ['R', COL_R]].forEach(([k, col]) => {
+    const all = []; pg.notes[k].forEach(x => x.lines.forEach((L, i) => all.push({L, id: x.id, first: i === 0 && !x.cont})));
+    if (!all.length) return;
+    let fit = Math.floor((room - PN_SEP) / LH_FN); if (fit < 0) fit = 0;
+    if (fit > all.length) fit = all.length;
+    const shown = all.slice(0, fit), rest = all.slice(fit);
+    if (rest.length) {   // regroup the remainder as continued notes
+      const byId = []; rest.forEach(x => { let g = byId.find(b => b.id === x.id); if (!g) { g = {id: x.id, lines: [], cont: !x.first}; byId.push(g); } g.lines.push(x.L); });
+      carry[k] = byId.concat(carry[k]);
+    }
+    if (!shown.length) return;
+    const top = TEXT_TOP + pg.capPx - shown.length * LH_FN;
+    const rule = mk('div', 'pnrule', ''); rule.style.left = col.x + 'px'; rule.style.top = (top - PN_SEP / 2 - 1) + 'px'; pg.el.appendChild(rule);
+    shown.forEach((x, i) => {
+      const L = x.L, d = document.createElement('div');
+      d.className = 'line pn' + (L.first ? ' first' : '') + (L.last ? ' last' : '');
+      d.lang = k === 'L' ? CONFIG.lang_left : CONFIG.lang_right; d.dataset.col = k; d.dataset.pn = x.first ? x.id : '';
+      d.style.left = col.x + 'px'; d.style.top = (top + i * LH_FN) + 'px'; d.style.width = col.w + 'px';
+      d.innerHTML = L.html; pg.el.appendChild(d);
+    });
+  });
+}
+function place(pg, row, start, n) {
+  const y = pg.top + pg.usedPx;
+  [['L', COL_L], ['R', COL_R]].forEach(([k, col]) => {
+    const src = row['lines' + k];
+    const total = row['n' + k];
+    if (start >= total) return;
+    const lines = Math.min(n, total - start);
+    for (let i = 0; i < lines; i++) {
+      const li = start + i; if (li >= src.length) break;
+      const L = src[li]; if (L.cls === 'blank') continue;
+      const d = document.createElement('div');
+      d.className = 'line ' + L.cls + (L.first ? ' first' : '') + (L.first && L.flush ? ' flush' : '') + (L.last ? ' last' : '');
+      d.lang = k === 'L' ? CONFIG.lang_left : CONFIG.lang_right; d.dataset.col = k;
+      d.style.left = col.x + 'px'; d.style.top = (y + i * row.lh) + 'px'; d.style.width = col.w + 'px';
+      d.innerHTML = L.html; pg.el.appendChild(d);
+    }
+  });
+  pg.usedPx += n * row.lh;
+  if (row.lh !== LH) pg.usedPx = Math.ceil(pg.usedPx / LH) * LH;   // back onto the body grid
+}
+let pg = newPage();
+rows.forEach((row, ri) => {
+  let start = 0;
+  const isHead = !!HEAD[row.kind];
+  // a heading's leading blank line is dropped at the top of a page
+  let guard = 0;
+  while (start < row.H) {
+    if (++guard > 400) { console.warn('WARN layout loop stuck at row ' + ri + ' line ' + start + ' page ' + pages.length); break; }
+    if (pg.usedPx === 0 && start === 0 && row.linesL[0] && row.linesL[0].cls === 'blank' && row.linesR[0] && row.linesR[0].cls === 'blank') start = 1;
+    if ((row.kind === 'fn' || row.kind === 'quo') && pg.usedPx === 0 && start === 0 && row.linesL[0] && row.linesL[0].cls === 'blank') start = 1;
+    if ((FACING || CONFIG.chapter_breaks) && (row.kind === 'h1' || row.pb || ((CONFIG.break_level || 1) >= 2 && row.kind === 'h2')) && start === 0 && pg.usedPx > 0) {   // a chapter / part title opens a fresh page
+      pg = newPage();
+      let g3 = 0; while (PN && (pg.notes.L.length || pg.notes.R.length) && ++g3 < 20) pg = newPage();   // notes continued from the last chapter get pages of their own
+      continue;
+    }
+    let availPx = pg.capPx - pg.usedPx;
+    let avail = Math.floor(availPx / row.lh), rem = row.H - start;
+    let n = Math.min(rem, avail);
+    if (PN && n > 0) {   // shrink until body + this page's notes (+ at least the first line of each new note) fit
+      const need = (m, full) => Math.max(...['L', 'R'].map(k => {
+        const cur = pageNoteLines(pg, k), nw = newNoteLines(row, k, start, m);
+        return notesPx(cur + nw.reduce((a, x) => a + (full ? x.lines.length : Math.min(2, x.lines.length)), 0));
+      }));
+      let mF = n; while (mF > 0 && mF * row.lh + need(mF, true) > availPx) mF--;
+      let mP = n; while (mP > 0 && mP * row.lh + need(mP, false) > availPx) mP--;
+      n = (pg.usedPx > 0 && mF > 0 && mF >= mP - 3) ? mF : mP;   // on a fresh page always fill: the note continues overleaf
+      if (n === 0 && pg.usedPx === 0) n = 1;   // never leave a fresh page without text: the notes continue overleaf   // keep notes whole if that costs at most three lines of text; otherwise split the note and continue it overleaf
+    }
+    if (n <= 0 || (start === 0 && n === 1 && rem > 1 && pg.usedPx > 0)) { pg = newPage(); continue; }
+    if (isHead && n < rem && pg.usedPx > 0) { pg = newPage(); continue; }             // keep headings whole
+    if (isHead && pg.usedPx > 0) {                                                      // keep headings with the next row
+      const nxt = rows[ri + 1];
+      const need = rem * row.lh + (nxt ? Math.min(2, nxt.H) * nxt.lh : 0);
+      if (need > availPx) { pg = newPage(); continue; }
+    }
+    if (n < rem && rem - n === 1 && n > 1) n -= 1;                                    // no widow line
+    if (row.toc && row.toc.page === undefined) row.toc.page = pg.idx;
+    if (PN) ['L', 'R'].forEach(k => newNoteLines(row, k, start, n).forEach(x => pg.notes[k].push({id: x.id, lines: x.lines})));
+    place(pg, row, start, n);
+    start += n;
+    if (start < row.H) pg = newPage();
+  }
+});
+
+if (PN) {
+  renderNotes(pg);
+  let g2 = 0; while ((carry.L.length || carry.R.length) && ++g2 < 50) { pg = newPage(); renderNotes(pg); }
+  // renumber per page and column: cues in reading order 1, 2, 3 …; note labels follow
+  pages.forEach(p => ['L', 'R'].forEach(k => {
+    const lines = Array.from(p.el.querySelectorAll('.line[data-col="' + k + '"]')).filter(d => !d.classList.contains('pn'))
+      .sort((a, b) => parseFloat(a.style.top) - parseFloat(b.style.top));
+    const map = {}; let c = 0;
+    const NM = CONFIG.note_marks || '{n}';
+    const mark = c => NM === '*' ? '*'.repeat(c) + ')' : NM.replace('{n}', c);
+    lines.forEach(d => d.querySelectorAll('sup.fr').forEach(s => { const id = s.textContent; if (!(id in map)) map[id] = CONFIG.note_labels ? (CONFIG.note_labels[+id - 1] || '?') + ')' : mark(++c); s.textContent = map[id]; }));
+    p.el.querySelectorAll('.line.pn[data-col="' + k + '"]').forEach(d => { const s = d.querySelector('sup.nn'); if (s) s.textContent = map[s.textContent] || s.textContent; });
+  }));
+}
+// ── Facing mode: every engine page becomes a verso (original) + recto (translation) pair ──
+// Original pagination [n] is lifted out of the running text into the outer margin, level with the
+// line where each source page begins (verso → left/outside margin, recto → right/outside margin).
+function marginFolios(pageEl, side) {
+  pageEl.querySelectorAll('.line').forEach(d => {
+    const marks = d.querySelectorAll('span.pg'); if (!marks.length) return;
+    const nums = [];
+    marks.forEach(s => { nums.push(s.textContent.replace(/[\[\]]/g, '').trim()); s.remove(); });
+    const lab = document.createElement('div'); lab.className = 'mpg';
+    lab.textContent = nums.join(' '); lab.style.top = d.style.top; lab.style.height = d.style.height;
+    if (side === 'verso') { lab.style.left = '0px'; lab.style.width = (M_OUT - 8) + 'px'; lab.style.textAlign = 'right'; }
+    else { lab.style.left = (M_IN + TEXT_W + 8) + 'px'; lab.style.width = (M_OUT - 8) + 'px'; lab.style.textAlign = 'left'; }
+    pageEl.appendChild(lab);
+  });
+}
+if (FACING) {
+  pages.forEach(pg => {
+    const v = document.createElement('div'), r = document.createElement('div'); v.className = r.className = 'page';
+    pg.el.querySelectorAll('.line').forEach(d => (d.dataset.col === 'L' ? v : r).appendChild(d));
+    pg.el.replaceWith(v); v.after(r); pg.verso = v; pg.recto = r;
+    marginFolios(v, 'verso'); marginFolios(r, 'recto');
+    pg.rhV = runningHead(v, '', 'verso'); pg.rhR = runningHead(r, '', 'recto');
+  });
+}
+// Landscape mode with --margin-folios: [n] lifted into the outer margin beside its column
+// (original → left margin, translation → right margin), level with the line where the page begins.
+if (!FACING && CONFIG.margin_folios) {
+  pages.forEach(pg => pg.el.querySelectorAll('.line').forEach(d => {
+    const marks = d.querySelectorAll('span.pg'); if (!marks.length) return;
+    const nums = [];
+    marks.forEach(s => { nums.push(s.textContent.trim()); const prev = s.previousSibling;
+      if (CONFIG.break_bars) { const bar = document.createElement('span'); bar.className = 'pbar'; s.replaceWith(bar); } else s.remove();
+      if (prev && prev.nodeType === 3) prev.textContent = prev.textContent.replace(/\s+$/, ' '); });
+    d.innerHTML = d.innerHTML.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+    if (CONFIG.break_bars) d.querySelectorAll('span.pbar').forEach((bar, i, all) => { if (i === 0 && bar === d.firstChild) bar.remove(); });
+    const lab = document.createElement('div'); lab.className = 'mpg';
+    lab.textContent = nums.join(' '); lab.style.top = d.style.top; lab.style.height = d.style.height;
+    if (CONFIG.break_bars) { lab.style.color = '#a33'; lab.textContent = nums.map(n => n.replace(/[\[\]]/g, '')).join(' '); }
+    if (d.dataset.col === 'L') { lab.style.left = '0px'; lab.style.width = (MX - 14) + 'px'; lab.style.textAlign = 'right'; }
+    else { lab.style.left = (PAGE_W - MX + 14) + 'px'; lab.style.width = (MX - 14) + 'px'; lab.style.textAlign = 'left'; }
+    pg.el.appendChild(lab);
+  }));
+}
+const tocRowsF = rows.filter(r => r.toc);
+function blankPage(after) { const b = document.createElement('div'); b.className = 'page'; after.after(b); return b; }
+function buildFrontFacing(start) {
+  // p1 title (recto) · p2 note on the text (verso) · p3… contents (single bilingual column, numbers = verso page of the spread)
+  const front = [];
+  let p = document.createElement('div'); p.className = 'page'; pagesEl.prepend(p); front.push(p);
+  const tb = mk('div', 'tb',
+    (CONFIG.author ? '<div class="author">' + CONFIG.author + '</div>' : '') +
+    (CONFIG.work_line ? '<div class="work">' + CONFIG.work_line + '</div>' : '') +
+    (CONFIG.credit ? '<div class="credit">' + CONFIG.credit + '</div>' : '') +
+    '<div class="edition">' + (CONFIG.lang_left === 'es' && CONFIG.lang_right === 'en' ? 'Edición bilingüe · Bilingual edition' : 'Bilingual edition') + '</div>');
+  tb.style.left = M_IN + 'px'; tb.style.width = TEXT_W + 'px'; tb.style.top = CONFIG.title_top + 'px'; p.appendChild(tb);
+  p = document.createElement('div'); p.className = 'page'; front[0].after(p); front.push(p);
+  if (CONFIG.footnotes.length) {
+    const fn = mk('div', 'efn', '<p class="nh">' + (CONFIG.lang_right === 'en' ? 'Note on the text' : 'Note') + '</p>' + CONFIG.footnotes.map(t => '<p>' + t + '</p>').join('') +
+      '<p>' + (CONFIG.lang_right === 'en' ? 'The original text is printed on the left-hand (even) pages and the translation on the facing right-hand pages, with paragraph beginnings aligned across each spread. Contents entries give the left-hand page on which the section begins.' : '') + '</p>');
+    fn.style.left = M_OUT + 'px'; fn.style.width = TEXT_W + 'px'; fn.style.top = TEXT_TOP + 'px'; p.appendChild(fn);
+  }
+  // contents pages: recto first (p3), then alternating
+  let side = 'recto', num = 3;
+  const newTocPage = () => {
+    const q = document.createElement('div'); q.className = 'page'; front[front.length - 1].after(q); front.push(q);
+    runningHead(q, num, side);
+    const t = mk('div', 'toc', ''); t.style.left = (side === 'recto' ? M_IN : M_OUT) + 'px'; t.style.width = TEXT_W + 'px'; t.style.top = TEXT_TOP + 'px';
+    q.appendChild(t); side = side === 'recto' ? 'verso' : 'recto'; num++; return t;
+  };
+  let toc = newTocPage();
+  toc.innerHTML = '<div class="toc-head"><div>' + CONFIG.toc_title_left + (CONFIG.toc_title_right && CONFIG.toc_title_right !== CONFIG.toc_title_left ? ' <span class="sub">' + CONFIG.toc_title_right + '</span>' : '') + '</div></div>';
+  tocRowsF.forEach(r => {
+    const t = r.toc;
+    const e = mk('div', '', '<div class="toc-e l' + t.level + '"><div class="c">' + '<span class="n">' + (start + 2 * t.page) + '</span>' + (t.src ? '<span class="src">[' + t.src + ']</span>' : '') + t.de + '</div><div class="c en">' + t.en + '</div></div>').firstChild;
+    toc.appendChild(e);
+    if (toc.getBoundingClientRect().height > TEXT_BOTTOM - TEXT_TOP) { e.remove(); toc = newTocPage(); toc.appendChild(e); }
+  });
+  if (front.length % 2 === 0) front.push(blankPage(front[front.length - 1]));   // text must open on a verso (even page): front count must be odd
+  return front;
+}
+if (FACING) {
+  let start = 6, front = buildFrontFacing(start);
+  for (let iter = 0; iter < 4 && front.length + 1 !== start; iter++) { front.forEach(p => p.remove()); start = front.length + 1; front = buildFrontFacing(start); }
+  pages.forEach((pg, i) => { pg.rhV.querySelector('.l').textContent = start + 2 * i; pg.rhR.querySelector('.r').textContent = start + 2 * i + 1; });
+  let total = front.length + 2 * pages.length;
+  if (total % 2 === 1) { blankPage(pages[pages.length - 1].recto); total++; }
+  const bmF = r => ({l: r.toc.level, t: String(r.toc.en || r.toc.de || '').replace(/<[^>]+>/g, '').replace(/["\\]/g, '').slice(0, 120), p: start + 2 * r.toc.page});
+  console.log('STATS ' + JSON.stringify({pages: total, front: front.length, body: 2 * pages.length, toc_entries: tocRowsF.length, toc: tocRowsF.map(bmF)}));
+  document.title = CONFIG.doc_title || 'parallel edition';
+  return;
+}
+
+// ── Front matter: title block + table of contents, then renumber ──
+const tocRows = rows.filter(r => r.toc);
+const mT = document.getElementById('mT'); mT.style.width = BLOCK_W + 'px';
+function tocEntryHtml(r, k) {
+  const t = r.toc;
+  return '<div class="toc-e l' + t.level + '"><div class="c">' +
+         (t.src ? '<span class="src">[' + t.src + ']</span>' : '') + t.de + '</div><div></div><div class="c">' +
+         '<span class="n">' + (t.page + 1 + k) + '</span>' + t.en + '</div></div>';
+}
+function buildFront(k) {
+  const front = [];
+  let p = document.createElement('div'); p.className = 'page';
+  const tb = mk('div', 'tb',
+    (CONFIG.author ? '<div class="author">' + CONFIG.author + '</div>' : '') +
+    (CONFIG.work_line ? '<div class="work">' + CONFIG.work_line + (CONFIG.footnotes.length ? '<sup>' + (CONFIG.footnotes.length === 1 ? '*' : '1') + '</sup>' : '') + '</div>' : '') +
+    (CONFIG.credit ? '<div class="credit">' + CONFIG.credit + '</div>' : ''));
+  tb.style.left = MX + 'px'; tb.style.width = BLOCK_W + 'px'; tb.style.top = CONFIG.title_top + 'px';
+  p.appendChild(tb); pagesEl.prepend(p);
+  let top = Math.ceil((tb.getBoundingClientRect().bottom - p.getBoundingClientRect().top + CONFIG.title_gap) / LH) * LH;
+  let bottom = TEXT_BOTTOM;
+  let fn = null;
+  if (CONFIG.footnotes.length) {
+    fn = mk('div', 'efn', '<div class="fnrule"></div>' + CONFIG.footnotes.map((t, i) => '<p><sup>' + (CONFIG.footnotes.length === 1 ? '*' : (i + 1)) + '</sup>' + t + '</p>').join(''));
+    fn.style.left = MX + 'px'; fn.style.width = BLOCK_W + 'px'; p.appendChild(fn);
+    const fnH = fn.getBoundingClientRect().height;
+    fn.style.top = (TEXT_BOTTOM - fnH) + 'px';
+    bottom = TEXT_BOTTOM - fnH - 14;
+  }
+  const head = '<div class="toc-head"><div>' + CONFIG.toc_title_left + '<span class="sub">' + CONFIG.toc_sub_left + '</span></div><div></div><div>' + CONFIG.toc_title_right + '<span class="sub">' + CONFIG.toc_sub_right + '</span></div></div>';
+  let toc = mk('div', 'toc', head); toc.style.left = MX + 'px'; toc.style.width = BLOCK_W + 'px'; toc.style.top = top + 'px';
+  p.appendChild(toc); front.push(p);
+  // Measure each entry inside the real contents block (the scratch box mT does not carry the
+  // contents type size, so measuring there overestimates every entry and breaks the page early).
+  tocRows.forEach(r => {
+    const e = mk('div', '', tocEntryHtml(r, k)).firstChild;
+    toc.appendChild(e);
+    if (toc.getBoundingClientRect().height > bottom - top) {
+      e.remove();
+      p = document.createElement('div'); p.className = 'page'; front[front.length - 1].after(p);
+      runningHead(p, front.length + 1);
+      top = TEXT_TOP; bottom = TEXT_BOTTOM;
+      toc = mk('div', 'toc', ''); toc.style.left = MX + 'px'; toc.style.width = BLOCK_W + 'px'; toc.style.top = top + 'px';
+      p.appendChild(toc); front.push(p);
+      toc.appendChild(e);
+    }
+  });
+  return front;
+}
+let k = 1, front = buildFront(k);
+for (let iter = 0; iter < 4 && front.length !== k; iter++) { front.forEach(p => p.remove()); k = front.length; front = buildFront(k); }
+pages.forEach(pg => { pg.rh.querySelector('.r').textContent = pg.idx + 1 + front.length; });
+
+const bm = r => ({l: r.toc.level, t: String(r.toc.en || r.toc.de || '').replace(/<[^>]+>/g, '').replace(/["\\]/g, '').slice(0, 120), p: r.toc.page + 1 + front.length});
+console.log('STATS ' + JSON.stringify({pages: pages.length + front.length, front: front.length, body: pages.length, toc_entries: tocRows.length, toc: tocRows.map(bm)}));
+document.title = CONFIG.doc_title || 'parallel edition';
+})();
+</script>
+</body>
+</html>

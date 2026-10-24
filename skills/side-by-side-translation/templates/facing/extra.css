@@ -1,0 +1,5 @@
+/* Book-specific classes for this edition (appended after scripts/book.css by build.py).
+   Add only what the model pages need that book.css lacks, e.g.:
+   .body p.rh { display: flex; justify-content: space-between; }   running head with title + folio
+   .body p.v  { text-align: left; padding-left: 2.2em; }            verse
+*/

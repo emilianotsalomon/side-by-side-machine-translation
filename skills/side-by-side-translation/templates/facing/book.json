@@ -1,0 +1,18 @@
+{
+ "_comment": "Bolzano 1841 (Internet Archive scan, 233 PDF pages). new_book.py writes WORK/book.json from this; unset keys take the defaults in scripts/book.py. layout: facing (photocopy, scan beside the English) or retype (clean text, both columns typeset; then fill the 'retype' block as in references/facing-edition.md).",
+ "layout": "facing",
+ "first": 2, "last": 232,
+ "geometry": {"sheet": [960, 760], "sc": 0.48, "top": 20.0, "half": 480.0, "tw": 345, "scan_h": 1500},
+ "fit": {"grow": 1.25, "max": 16.5, "drift": 14, "fs_min": 10.5, "fs_max": 14.5},
+ "folio": {"format": "— {n} —", "ranges": [{"from": 2, "to": 232, "offset": -1}], "none": [2, 4, 18, 20, 120, 122]},
+ "marks": [{"class": "sig", "start": 3, "every": 16, "format": "{k}*"},
+           {"class": "sigf", "start": 17, "every": 16, "format": "{k}", "k0": 2}],
+ "ocr": {"pdf": "src/orig.pdf", "pdf_offset": 0, "align": "page", "tesseract": "frk"},
+ "margin_notes": false,
+ "ratio": [0.75, 1.35],
+ "outline": [[2, "Title page", 1], [4, "[Introduction]", 1],
+             [18, "I. Overview of the Theory of Science", 1], [120, "II. Overview of the Science of Religion", 1]],
+ "meta": {"title": "Bolzano's Wissenschaftslehre und Religionswissenschaft (1841) — German–English facing edition",
+          "author": "Bernard Bolzano"},
+ "out": "~/Desktop/claude-folder/Bolzano - … (DE-EN facing).pdf"
+}

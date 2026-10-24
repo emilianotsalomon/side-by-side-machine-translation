@@ -22,6 +22,7 @@ Describe both in the question in plain words (a photocopy beside a translation v
 - ≤ 12 pages per translator, ≤ 25 per reviewer, so no agent's context passes ~180k (beyond that cache-breaking trims multiply the cost);
 - after a usage-limit stop, fresh agents on the missing pages (`status.py`), not resumed ones;
 - `book.json` instead of editing scripts; `make.py` builds and checks the whole book in one call; `usage.py` reports the true cost.
+- finished editions go into the team corpus with `scripts/facing/corpus.py` (one Markdown file per book, original and English page by page) and the static reader `reader.py` (references/facing-edition.md § Corpus and reader);
 - the clean-text layout is the same pipeline plus an `orig/` transcription per page; `make.py` builds either layout from `book.json` (`retype.py` → `build_pdf.py` for clean text; references/facing-edition.md § Clean-text edition).
 
 ---

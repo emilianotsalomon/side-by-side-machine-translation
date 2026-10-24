@@ -169,6 +169,16 @@ exact breaks, the `*)` note continued across two pages set whole at the foot, nu
 Where a translator completed a clause on the earlier page, the English bar sits a few words from the German one —
 that is the translation, not an error.
 
+## Corpus and reader (the team's knowledge base)
+`corpus.py book BOOKDIR -o CORPUS --title … --author … --year … --lang de` writes ONE Markdown file per edition from the
+page files: a YAML header (author, title, languages, where the original text comes from, review status), then the
+text with `[p. N]` at every printed page start, the original in quoted blocks (`> …`), the English in plain paragraphs
+(paragraph pairs for clean-text editions, page pairs with the uncorrected OCR for photocopy editions). `corpus.py pdf
+FILE.pdf …` recovers the English (and, with `--both`, the original) from an edition whose page files were not kept.
+`corpus.py text FILE …` adds an ORIGINAL with no translation (PDF with a text layer, EPUB, Markdown or plain OCR text; `--ocr deu|frk` runs Tesseract locally on scan pages without text); `corpus.py chunks DIR …` imports a chunk_tools translation (cNN.src.md + cNN.en.md). Only public-domain texts and the team's own translations belong in a shared corpus — never a copyrighted modern edition. `corpus.py index CORPUS` writes the README table. `reader.py CORPUS DOCS` turns the corpus into a static site (one
+page per edition, one card per printed page, original left / English right, find-on-page) for GitHub Pages. The
+corpus files are generated: corrections go into the page files, then re-export (the team's `export_all.sh`).
+
 ## Agents (lean definitions)
 `agents/facing-translator.md` and `agents/facing-reviewer.md` restrict subagents to Read/Write/Edit/Bash: a
 general-purpose subagent carries ≈ 42k tokens of tool schemas and system prompt into every call; these carry far

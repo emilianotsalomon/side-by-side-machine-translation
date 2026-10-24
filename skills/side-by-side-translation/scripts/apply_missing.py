@@ -9,7 +9,7 @@ characters of the translation paragraph that precedes the gap — and a `trans` 
 (an empty `trans` is skipped and reported). The new paragraph goes right after that anchor,
 in the file's own style (one paragraph per line, or blank-line separated). Entries are applied
 from the end of the file backwards, so several gaps can be filled in one run."""
-import json, pathlib, re, sys
+import json, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from md_prep import _inline
 

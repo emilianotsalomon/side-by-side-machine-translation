@@ -744,7 +744,7 @@ def main():
             if not a.no_propagate_markers: propagate_markers(pairs)
             v_ok, issues = verify_alignment(pairs)
             if v_ok:
-                print(f"  Alignment: ✓ all anchors match\n")
+                print("  Alignment: ✓ all anchors match\n")
             else:
                 print(f"  Alignment: ✗ {len(issues)} issue(s):")
                 for iss in issues:

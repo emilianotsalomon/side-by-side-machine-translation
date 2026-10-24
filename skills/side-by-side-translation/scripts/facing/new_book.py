@@ -106,7 +106,7 @@ if not opt.get('--no-agents'):
 print(f'book folder: {B}\n  layout: {layout}   source kind: {kind}   tesseract: {lang}\n  edit {W}/book.json (first/last, folio ranges, out), then:')
 PY = os.path.join(B, 'scripts', 'py')
 print(f'  cd {B} && scripts/py prep.py work {kind}{" --flat" if opt.get("--flat") else ""} && scripts/py lines.py work > work/lines.log')
-print(f'  scripts/py bundle.py work s020 s021      # smoke test')
+print('  scripts/py bundle.py work s020 s021      # smoke test')
 if opt.get('--prep') and src:
     print('running prep.py and lines.py …', flush=True)
     subprocess.run([PY, 'prep.py', 'work', kind] + (['--flat'] if opt.get('--flat') else []), cwd=B, check=True)

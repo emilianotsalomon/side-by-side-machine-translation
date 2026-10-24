@@ -49,10 +49,13 @@ def inline(h):
     return re.sub(r'\s+', ' ', h).strip()
 
 
+ANCH = {}                                             # block id -> data-l anchor (line number) of the last blocks() call
+
+
 def blocks(path):
-    """[(kind, cls, text)]  kind: h1..h4 | p | note | mn"""
+    """[(kind, cls, text)]  kind: h1..h4 | p | note | mn;  ANCH[path] = [line anchor per block or None]"""
     s = re.sub(r'<!--.*?-->', '', open(path).read(), flags=re.S)
-    out = []
+    out, anchors = [], []
     for m in BLOCK.finditer(s):
         tag, attrs, inner = m.group(1), m.group(2), m.group(3)
         cls = (re.search(r'class="([^"]*)"', attrs) or [None, ''])[1]
@@ -62,8 +65,15 @@ def blocks(path):
         t = inline(inner)
         if not t:
             continue
+        a = re.search(r'data-l="(-?[\d.]+)"', attrs)
+        at = re.search(r'data-at="([\d.]+)"', attrs)
+        anchors.append(float(a.group(1)) if a else (('at', float(at.group(1))) if at else None))
+        words = cls.split()
+        centred = bool(words) and (words[0] in ('c', 'ch', 'tit', 'sec', 'pt', 'h') or 'c' in words[:2]) and 'pn' not in words
         if tag.startswith('h'):
             out.append((tag, cls, t))
+        elif tag == 'p' and centred and len(t) <= 90 and not re.fullmatch(r'[§\s\d.,;:—–-]+', t):
+            out.append(('h3', cls, t))              # a centred line of text is a heading (contents entry)
         elif c0 in ('note', 'fn'):
             out.append(('note', cls, t))
         elif c0 == 'mn':
@@ -72,6 +82,69 @@ def blocks(path):
             out.append(('p', cls, re.sub(r'\s*/\s*', ' … ', t)))
         else:
             out.append(('p', cls, t))
+    ANCH[path] = anchors
+    return out
+
+
+def ocr_lines(W, p):
+    """the page's OCR as printed lines (non-blank), from ocr/sPPP.txt, a word-box .tsv or the source PDF"""
+    for f in (f'{W}/ocr/{p}.txt', f'{W}/ocr/b_{p}.txt'):
+        if os.path.exists(f):
+            raw = open(f, errors='replace').read(); break
+    else:
+        f = f'{W}/ocr/{p}.tsv'
+        if os.path.exists(f):
+            rows = [r.split('\t') for r in open(f).read().splitlines() if r]
+            rows = [(float(r[1]), float(r[0]), r[4]) for r in rows if len(r) > 4]
+            rows.sort()
+            lines, cur, y0 = [], [], None
+            for y, x, w in rows:
+                if y0 is not None and y - y0 > 12:
+                    lines.append(' '.join(t for _, t in sorted(cur))); cur = []
+                cur.append((x, w)); y0 = y if y0 is None or y - y0 > 12 else y0
+            if cur:
+                lines.append(' '.join(t for _, t in sorted(cur)))
+            raw = '\n'.join(lines)
+        else:
+            src = glob.glob(f'{W}/src/*.pdf')
+            if not src:
+                return []
+            n = int(p[1:])
+            raw = subprocess.run(['pdftotext', '-layout', '-f', str(n), '-l', str(n), src[0], '-'], capture_output=True, text=True).stdout
+    L = [re.sub(r'\s+', ' ', l).strip() for l in raw.split('\n')]
+    L = [l for l in L if l]
+    if L and re.fullmatch(r'[-—–\s]*\(?[\divxlcIVXLC]{1,6}\)?[-—–\s]*', L[0]):     # folio line
+        L = L[1:]
+    return L
+
+
+def join_lines(ls):
+    t = ' '.join(ls)
+    t = re.sub(r'(\w)\s?[-¬‐=]\s(?=[a-zäöüß])', r'\1', t)
+    t = re.sub(r'\s+([,.;:!?)])', r'\1', t)
+    return t.strip()
+
+
+def ocr_slices(W, p, anchors, nprinted):
+    """split the page's OCR lines at the English blocks' line anchors -> one original slice per block"""
+    L = ocr_lines(W, p)
+    if not L:
+        return None
+    n = len(L)
+    k = n / nprinted if nprinted and abs(n - nprinted) > 0.15 * nprinted else 1.0    # proportional only when counts disagree
+    starts = []
+    for a in anchors:
+        if a is None:
+            starts.append(None); continue
+        starts.append(max(0, min(n, int(round((a - 1) * k)))))
+    known = [i for i, x in enumerate(starts) if x is not None]
+    out = [''] * len(anchors)
+    for j, i in enumerate(known):
+        s0 = 0 if j == 0 else starts[i]
+        s1 = n if j == len(known) - 1 else starts[known[j + 1]]
+        if s1 < s0:
+            s1 = s0
+        out[i] = join_lines(L[s0:s1])
     return out
 
 
@@ -177,26 +250,34 @@ def mode_book():
         for p in pages:
             n = folio(f'{W}/en/{p}.html')
             add(f'[p. {n}]' if n else f'[scan {int(p[1:])}]'); add('')
-            o = ocr_text(W, p)
-            if o:
-                nocr += 1; add(quote(o)); add('')
-            body, notes, margins = [], [], []
-            for k, c, t in blocks(f'{W}/en/{p}.html'):
-                if k == 'note':
-                    notes.append(t)
-                elif k == 'mn':
-                    margins.append(t)
+            ef = f'{W}/en/{p}.html'
+            bl = blocks(ef); anchors = ANCH.get(ef, [])
+            lj = f'{W}/lines/{p}.json'
+            LJ = json.load(open(lj))['lines'] if os.path.exists(lj) else []
+            nprinted = len(LJ)
+            for i, a in enumerate(anchors):           # data-at="Y" (scan px) -> the first printed line at or below Y
+                if isinstance(a, tuple):
+                    anchors[i] = (min(range(len(LJ)), key=lambda j: abs(LJ[j][0] - a[1])) + 1) if LJ else None   # nearest printed line
+            sl = ocr_slices(W, p, anchors, nprinted)
+            if sl is not None:
+                nocr += 1
+            order = [i for i, b in enumerate(bl) if b[0] != 'note'] + [i for i, b in enumerate(bl) if b[0] == 'note']
+            if not bl and sl:                                   # a page with no English blocks (plates etc.)
+                add(quote(join_lines(ocr_lines(W, p)))); add('')
+            for i in order:
+                k, c, t = bl[i]
+                if sl is not None and sl[i]:
+                    add(quote(sl[i])); add('')
+                if k == 'mn':
+                    add(f'[margin: {t}]')
                 elif k.startswith('h'):
-                    body.append('#' * min(6, int(k[1]) + 1) + ' ' + t)
+                    add('#' * min(6, int(k[1]) + 1) + ' ' + t)
                 else:
-                    body.append(t)
-            for m in margins:
-                body.insert(0, f'[margin: {m}]')
-            for t in body + notes:
-                add(t); add('')
+                    add(t)
+                add('')
             npages += 1
         has_ocr = glob.glob(f'{W}/ocr/*.t*')
-        otext = ('OCR of the scan, uncorrected (the scan in the PDF edition is the authority)' if nocr else
+        otext = ('OCR of the scan, uncorrected, cut at the English paragraph starts (the scan in the PDF edition is the authority)' if nocr else
                  'not in this file (scan only — see the PDF edition)')
         if nocr and not has_ocr:
             otext = "the source PDF's own text (born-digital)"
@@ -238,12 +319,15 @@ def parse_half(txt):
     inds = [len(l) - len(l.lstrip()) for l in lines if l.strip()]
     base = min(inds) if inds else 0
     paras, notes, cur = [], [], ''
+    cind = []                                                     # indent of each paragraph's first line
     for l in lines:
         if not l.strip():
             if cur:
                 paras.append(cur); cur = ''
             continue
         ind = len(l) - len(l.lstrip()) - base
+        if not cur:
+            cind.append(ind)
         t = l.strip()
         isnote = re.match(r'^\(\d{1,3}\)\s|^\d{1,3}\)\s|^\*+\)?\s|^[†‡]\s', t) and ind <= 4
         if isnote and cur:
@@ -258,6 +342,18 @@ def parse_half(txt):
             cur = (cur + ' ' + t).strip()
     if cur:
         paras.append(cur)
+    HEAD = re.compile(r'^(?:(?:[IVXLC]+|\d+)[.:]?\s+\S|§|CHAPTER|CAPÍTULO|CAPITULO|CAPITOLO|LIBRO|BOOK|PARTE|PART|SECCI|SECTION|TÍTULO|PR[OÓ]LOGO|PREFACE|INTRODUC|DISSERTA|APPENDI|AP[ÉE]NDICE|ÍNDICE|INDEX|NOTES|NOTAS)', re.I)
+    out = []
+    for i, p in enumerate(paras):
+        short = len(p) <= 80 and not p.endswith((',', ';', ':'))
+        caps = p.isupper() and len(p) >= 4
+        centred = i < len(cind) and cind[i] >= 6
+        real = re.search(r'[A-Za-zÀ-ÿ]{3,}', p) and p.lower().strip('.') not in ('of', 'and', 'the', 'by', 'von', 'der', 'de', 'del', 'y', 'e', 'et', 'di')
+        if short and real and (caps or (centred and HEAD.match(p)) or (centred and len(p) <= 40 and not p.endswith('.'))):
+            out.append('## ' + p.rstrip('.') if not p.endswith('.') or caps else '## ' + p)
+        else:
+            out.append(p)
+    paras = out
     body = [p for p in paras if not re.match(r'^\(\d{1,3}\)\s|^\d{1,3}\)\s|^\*+\)?\s|^[†‡]\s', p)]
     notes = [p for p in paras if p not in body]
     return fol, body, notes

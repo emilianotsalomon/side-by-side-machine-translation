@@ -38,12 +38,17 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .side .meta{color:var(--toc);line-height:1.4;margin:0 0 1rem;font-size:.8rem}
 .card{position:relative;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:1.1rem 1.3rem 1rem;margin:0 0 1.1rem;display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
 .card.mono{grid-template-columns:1fr;max-width:48rem}
+.card.pairs{display:block}.card.pairs h2,.card.pairs h3,.card.pairs h4{display:block}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem;margin:0 0 .5rem}.row.single{grid-template-columns:1fr}.row.single .e{max-width:66ch}.row:last-child{margin-bottom:0}
+.row .o{background:var(--orig);border-radius:7px;padding:.55rem .9rem;font-size:.96em}.row .o.empty{background:transparent}
+.fnrows{margin-top:.9rem;padding-top:.6rem;border-top:1px solid var(--line)}.fnrow .o,.fnrow .e{font-size:.84em;line-height:1.45;color:var(--muted)}.fnrow .o{background:transparent;padding:0 .9rem}
+.fnrow{margin-bottom:.3rem}
 .card .pg{position:absolute;top:-.62rem;left:1rem;font-size:.72rem;letter-spacing:.08em;color:var(--accent);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:.02rem .55rem}
 .card h2,.card h3,.card h4,.card h5{grid-column:1/-1;font-weight:normal;text-align:center;margin:.3rem 0 .5rem;line-height:1.3}
 .card h2{font-size:1.3rem;letter-spacing:.02em}.card h3{font-size:1.1rem}.card h4{font-size:1rem;font-style:italic}
 .card .o{background:var(--orig);border-radius:7px;padding:.75rem .9rem;font-size:.96em}
 .card .o p,.card .e p{margin:0 0 .75em;text-align:justify;text-align-last:left;hyphens:auto;-webkit-hyphens:auto;hyphenate-limit-chars:6 3 3;overflow-wrap:anywhere;line-height:1.6}
-.card .o p:last-child,.card .e p:last-child{margin-bottom:0}.card .o,.card .e{min-width:0;display:flex;flex-direction:column}
+.card .o p:last-child,.card .e p:last-child{margin-bottom:0}.card .o,.card .e{min-width:0}
 .card .fn{margin-top:auto;padding-top:.5rem;border-top:1px solid var(--line);font-size:.84em;line-height:1.45;color:var(--muted)}
 .card .fn p{margin:0 0 .3em;text-align:justify;text-align-last:left;hyphens:auto}.card .fn p:last-child{margin-bottom:0}.card .o .fn{border-top-color:color-mix(in srgb,var(--line) 60%,var(--orig))}
 .card .fn{margin-top:.8rem}
@@ -56,7 +61,7 @@ input[type=search]{flex:1;min-width:14rem}.controls .n{color:var(--muted);font-s
 .notes p{margin:0 0 .5em}.notes .who{color:var(--muted);font-size:.85em}
 .gnotes{background:var(--note);border:1px solid var(--line);border-radius:10px;padding:1rem 1.3rem;margin:0 0 1.2rem;font-size:.95em}.gnotes h3{margin:0 0 .4rem;font-weight:normal;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 sup{font-size:.7em;line-height:0}.toolbar{display:flex;gap:.7rem;align-items:center;margin:0 0 1.2rem}.toolbar input{max-width:24rem}
-@media(max-width:900px){.page{grid-template-columns:1fr}.side{position:static;max-height:none}.card{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
+@media(max-width:900px){.page{grid-template-columns:1fr}.side{position:static;max-height:none}.card,.row{grid-template-columns:1fr}.row{grid-template-columns:1fr}.row .m{text-align:left}}
 """
 JS_INDEX = """
 const sel=document.getElementById('g'),lang=document.getElementById('l'),q=document.getElementById('q'),n=document.getElementById('n');
@@ -174,7 +179,7 @@ def render(path):
         g('original_language') + ('→en' if not mono else ''), 'original only' if mono else g('edition_layout').split(' (')[0], g('genre')) if x)
     out = [f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
            f'<title>{html.escape(g("author"))}, {html.escape(g("title"))}</title><style>{CSS}</style></head><body>'
-           f'<div class="top"><div class="in"><a class="back" href="{depth}index.html">← Editions</a><h1>{title}'
+           f'<div class="top"><div class="in"><a class="back" href="{depth}index.html">← Library</a><h1>{title}'
            f'{(" — <i>" + html.escape(g("title_en")) + "</i>") if g("title_en") else ""}</h1>{chips}</div></div>'
            f'<div class="wrap"><div class="page"><aside class="side">'
            f'<p class="meta">{html.escape(g("original_text"))}.' + (f' Translation: {html.escape(g("translation"))}.' if not mono else '') + '</p>'
@@ -184,9 +189,13 @@ def render(path):
     out.append('</aside><main>')
     if general:
         out.append('<div class="gnotes"><h3>Notes on this text</h3>' + ''.join(general) + '</div>')
-    def col(cls, body, notes, lang, empty=''):
-        fn = f'<div class="fn">{"".join(notes)}</div>' if notes else ''
-        return f'<div class="{cls}" lang="{lang}">{"".join(body) or empty}{fn}</div>'
+    def rows(o, e, ol, kind=''):
+        """paired rows when the two sides have the same number of paragraphs; otherwise one row with both columns"""
+        if o and e and len(o) == len(e):
+            return ''.join(f'<div class="row{kind}"><div class="o" lang="{ol}">{a}</div><div class="e" lang="en">{b}</div></div>' for a, b in zip(o, e))
+        if not o:                                   # nothing on the original side: show what there is, full width
+            return f'<div class="row single{kind}"><div class="e" lang="en">{"".join(e)}</div></div>'
+        return f'<div class="row{kind}"><div class="o" lang="{ol}">{"".join(o)}</div><div class="e" lang="en">{"".join(e)}</div></div>'
     for c in cards:
         if not (c['o'] or c['e'] or c['h'] or c['on'] or c['en']):
             continue
@@ -196,11 +205,16 @@ def render(path):
             notes = f'<div class="notes"><h5>Notes · {html.escape(c["label"])}</h5>{"".join(by_page[c["label"]])}</div>'
         lab = f'<span class="pg">{html.escape(c["label"])}</span>' if c['label'] else ''
         if mono:
-            out.append(f'<section class="card mono" id="{c["id"]}">{lab}{"".join(c["h"])}{col("e", c["e"], c["en"], ol)}{notes}</section>')
+            fn = f'<div class="fn">{"".join(c["en"])}</div>' if c['en'] else ''
+            out.append(f'<section class="card mono" id="{c["id"]}">{lab}{"".join(c["h"])}<div class="e" lang="{ol}">{"".join(c["e"])}{fn}</div>{notes}</section>')
         else:
-            out.append(f'<section class="card" id="{c["id"]}">{lab}{"".join(c["h"])}'
-                       f'{col("o", c["o"], c["on"], ol, "<p class=note>original not in the corpus for this page — see the PDF edition</p>")}'
-                       f'{col("e", c["e"], c["en"], "en")}{notes}</section>')
+            body = rows(c['o'], c['e'], ol)
+            if not c['o'] and not c['on']:
+                fn = f'<div class="fn">{"".join(c["en"])}</div>' if c['en'] else ''
+                out.append(f'<section class="card mono" id="{c["id"]}">{lab}{"".join(c["h"])}<div class="e" lang="en">{"".join(c["e"])}{fn}</div>{notes}</section>')
+                continue
+            foot = (f'<div class="fnrows">{rows(c["on"], c["en"], ol, " fnrow")}</div>' if (c['on'] or c['en']) else '')
+            out.append(f'<section class="card pairs" id="{c["id"]}">{lab}{"".join(c["h"])}{body}{foot}{notes}</section>')
     orphan = [l for l in by_page if l not in seen]
     if orphan:
         out.append('<div class="gnotes"><h3>Notes on pages not shown separately</h3>' + ''.join(f'<p><b>{html.escape(l)}</b></p>' + ''.join(by_page[l]) for l in orphan) + '</div>')
@@ -246,8 +260,8 @@ opts = ''.join(f'<option value="{html.escape(k)}">{html.escape(k)} ({len(genres[
 lopts = ''.join(f'<option value="{l}">{l}</option>' for l in langs)
 open(f'{O}/index.html', 'w').write(
     f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-    f'<title>Facing editions</title><style>{CSS}</style></head><body>'
-    f'<div class="top"><div class="in"><h1>Facing editions</h1><span class="sub">bilingual editions and original texts of the research group</span></div></div>'
+    f'<title>Idealisms Working Group Shared Repository</title><style>{CSS}</style></head><body>'
+    f'<div class="top"><div class="in"><h1>Idealisms Working Group Shared Repository</h1><span class="sub">bilingual editions, original texts and notes</span></div></div>'
     f'<div class="wrap"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
     f'Translations are machine-made and model-reviewed, not human-revised; each page says where its text comes from.</p></div>'
     f'<div class="controls"><select id="g"><option value="all">All genres</option>{opts}</select><select id="l"><option value="all">All languages</option>{lopts}</select>'

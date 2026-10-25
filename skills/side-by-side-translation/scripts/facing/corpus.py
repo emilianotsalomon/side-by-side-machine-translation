@@ -486,7 +486,7 @@ def mode_index():
     C = os.path.abspath(SRC)
     rows = []
     for f in sorted(glob.glob(f'{C}/*.md')) + sorted(glob.glob(f'{C}/*/*.md'), key=lambda x: (os.path.dirname(x), re.search(r'^order: (.*)$', open(x).read(), re.M).group(1) if re.search(r'^order: (.*)$', open(x).read(), re.M) else '', x)):
-        if os.path.basename(f) in ('README.md', 'PROJECT-INSTRUCTIONS.md') or '/glossaries/' in f or '/notes/' in f:
+        if os.path.basename(f) in ('README.md', 'PROJECT-INSTRUCTIONS.md') or '/glossaries/' in f or '/notes/' in f or '/resources/' in f:
             continue
         s = open(f).read()
         m = re.match(r'---\n(.*?)\n---', s, re.S)

@@ -29,6 +29,8 @@ a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .chip{display:inline-block;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:.05rem .55rem;margin-left:.3rem;vertical-align:middle;white-space:nowrap}
 .wrap{margin:0 auto;padding:1.2rem 1.4rem 5rem}.wrap.index{max-width:1100px}
 /* index */
+.tabs{display:flex;gap:1.6rem;border-bottom:1px solid var(--line);margin:1.6rem 0 0}.tabs button{font:inherit;font-size:1rem;border:0;background:transparent;color:var(--muted);padding:.6rem 0;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}.tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.reslist .row{border-bottom:1px solid var(--line)}
 .hero{padding:2.4rem 0 1.2rem}.hero h1{font-size:2rem;font-weight:normal;margin:0 0 .3rem;letter-spacing:-.01em}.hero p{margin:0;color:var(--muted);max-width:60ch}
 .controls{display:flex;gap:.9rem;flex-wrap:wrap;align-items:center;margin:1rem 0 1.6rem;position:sticky;top:3.1rem;background:var(--paper);padding:.6rem 0;z-index:4}
 .seg{display:inline-flex;align-items:center;gap:0;border:1px solid var(--line);border-radius:999px;background:var(--card);padding:.15rem;font-size:.82rem}
@@ -124,6 +126,9 @@ function apply(){const t=q.value.toLowerCase();let k=0;const searching=t.length>
   s.classList.toggle('hidden',!any);if(searching)s.open=any;else s.open=open.has(s.dataset.key)});n.textContent=searching?k+' text'+(k===1?'':'s'):'';}
 seg.querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b.dataset.by===by);b.onclick=()=>{by=b.dataset.by;sv('fe-by',by);open.clear();(st('fe-open-'+by)||'').split('|').filter(Boolean).forEach(x=>open.add(x));seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));build()}});
 q.addEventListener('input',apply);build();
+const tabs=document.querySelectorAll('.tabs button');const views={lib:document.getElementById('v-lib'),res:document.getElementById('v-res')};
+function view(v){tabs.forEach(b=>b.classList.toggle('on',b.dataset.v===v));Object.entries(views).forEach(([k,el])=>el.classList.toggle('hidden',k!==v));sv('fe-view',v);}
+tabs.forEach(b=>b.onclick=()=>view(b.dataset.v));view(location.hash==='#resources'?'res':(st('fe-view')||'lib'));
 """
 JS_PAGE = """
 (function(){const pg=document.querySelector('.page');if(!pg)return;const st=k=>{try{return localStorage.getItem(k)}catch(e){return null}};const sv=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
@@ -154,7 +159,12 @@ def header(path):
     s = open(path).read()
     m = re.match(r'---\n(.*?)\n---\n', s, re.S)
     h = dict(re.findall(r'^(\w+): (.*)$', m.group(1), re.M)) if m else {}
-    return {k: v.strip('"') for k, v in h.items()}, (s[m.end():] if m else s)
+    h = {k: v.strip('"') for k, v in h.items()}
+    body = s[m.end():] if m else s
+    if not h.get('title'):
+        t = re.search(r'^# (.+)$', body, re.M)
+        h['title'] = re.sub(r'\*', '', t.group(1)).strip() if t else os.path.basename(path)[:-3]
+    return h, body
 
 
 def load_notes(rel):
@@ -190,7 +200,7 @@ def render(path):
     h, body = header(path)
     g = lambda k: h.get(k, '')
     pairs = g('edition_layout').startswith('clean text')
-    mono = g('translation_language') == 'none'
+    mono = g('translation_language') in ('none', '')
     NOTE = re.compile(r'^(\d{1,3}\s?[a-c]?\)|\*+\)|\(\d{1,3}\)|[†‡]|<sup>[^<]*</sup>\s)')
     paras = [p.strip() for p in re.split(r'\n\s*\n', body) if p.strip()]
     paged = bool(re.search(r'\[(p\. [^\]]+|scan \d+|PDF \d+)\]', body))      # texts without any page marks: boxes per section
@@ -202,13 +212,18 @@ def render(path):
         cur = {'id': f'c{len(cards) + 1}', 'label': label, 'o': [], 'e': [], 'h': [], 'on': [], 'en': []}
         cards.append(cur)
     new_card('')
-    for p in paras[2:]:
+    skip = 0
+    if paras and paras[0].startswith('# '):
+        skip = 1
+    if len(paras) > 1 and paras[1].startswith('Conventions:'):
+        skip = 2
+    for p in paras[skip:]:
         mk = re.fullmatch(r'\[(p\. [^\]]+|scan \d+|PDF \d+)\]', p)
         if mk:
             new_card(mk.group(1)); continue
-        hm = re.match(r'^(#{2,6}) (.*)$', p, re.S)
+        hm = re.match(r'^(#{1,6}) (.*)$', p, re.S)
         if hm:
-            lvl = len(hm.group(1)); txt = md_inline(hm.group(2).replace('\n', ' '))
+            lvl = max(2, len(hm.group(1))); txt = md_inline(hm.group(2).replace('\n', ' '))
             if not paged and (cur['e'] or cur['o']):     # no page marks at all: a heading opens a new box (one per section)
                 new_card(cur['label'])
             toc.append((lvl, re.sub('<[^>]+>', '', txt), cur['id']))
@@ -239,7 +254,7 @@ def render(path):
     ol = g('original_language') or 'de'
     seen = set()
     depth = '../' * rel.count('/')
-    title = f'{html.escape(g("author"))}, <i>{html.escape(g("title"))}</i>' + (f' ({html.escape(g("year"))})' if g('year') else '')
+    title = (f'{html.escape(g("author"))}, ' if g('author') else '') + f'<i>{html.escape(g("title"))}</i>' + (f' ({html.escape(g("year"))})' if g('year') else '')
     chips = ''.join(f'<span class="chip">{html.escape(x)}</span>' for x in (
         g('original_language') + ('→en' if not mono else ''), 'original only' if mono else g('edition_layout').split(' (')[0], g('genre')) if x)
     out = [f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -247,8 +262,8 @@ def render(path):
            f'<div class="top"><div class="in"><a class="back" href="{depth}index.html">← Library</a><h1>{title}'
            f'{(" — <i>" + html.escape(g("title_en")) + "</i>") if g("title_en") else ""}</h1>{chips}</div></div>'
            f'<div class="wrap"><div class="page"><aside class="side">'
-           f'<p class="meta">{html.escape(g("original_text"))}.' + (f' Translation: {html.escape(g("translation"))}.' if not mono else '') + '</p>'
-           f'<div class="toolbar"><input id="q" type="search" placeholder="find on this page"></div>']
+           + (f'<p class="meta">{html.escape(g("original_text"))}.' + (f' Translation: {html.escape(g("translation"))}.' if not mono else '') + '</p>' if g('original_text') else '')
+           + f'<div class="toolbar"><input id="q" type="search" placeholder="find on this page"></div>']
     if toc:
         out.append('<h3>Contents</h3>' + ''.join(f'<a class="l{l}" href="#{cid}">{html.escape(t)}</a>' for l, t, cid in toc))
     out.append('</aside><div class="hdl l" data-for="side"></div><main>')
@@ -297,13 +312,17 @@ def order_key(x):
     return (os.path.dirname(x), [float(t) if re.fullmatch(r'\d+(\.\d+)?', t) else 0 for t in (m.group(1).split('.') if m else [])], x)
 
 
-entries = []
+entries, resources = [], []
 for f in sorted(glob.glob(f'{C}/*.md')) + sorted(glob.glob(f'{C}/*/*.md'), key=order_key):
     if os.path.basename(f) in ('README.md', 'PROJECT-INSTRUCTIONS.md') or '/glossaries/' in f or '/notes/' in f:
         continue
     rel, h, n = render(f)
-    entries.append((rel, h))
+    (resources if '/resources/' in f else entries).append((rel, h))
     print(rel, n, 'cards')
+resources.sort(key=lambda e: e[1].get('title', '').lower())
+rrows = ''.join(f'<div class="row"><div class="t"><a href="{rel}.html">{html.escape(h.get("title", ""))}</a>'
+                f'{("<span class=en>" + html.escape(", ".join(x for x in (h.get("about", ""), h.get("author", "")) if x)) + "</span>") if (h.get("about") or h.get("author")) else ""}</div>'
+                f'<div class="m">{("<span class=chip>" + html.escape(h["kind"]) + "</span>") if h.get("kind") else ""}</div></div>' for rel, h in resources)
 
 LANGN = {'de': 'German', 'es': 'Spanish', 'fr': 'French', 'it': 'Italian', 'la': 'Latin', 'hu': 'Hungarian', 'en': 'English', 'el': 'Greek', 'pt': 'Portuguese'}
 rows = []
@@ -327,10 +346,14 @@ open(f'{O}/index.html', 'w').write(
     f'<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
     f'<title>Idealisms Working Group Shared Repository</title><style>{CSS}</style></head><body>'
     f'<div class="top"><div class="in"><h1>Idealisms Working Group Shared Repository</h1><span class="sub">bilingual editions, original texts and notes</span></div></div>'
-    f'<div class="wrap index"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
+    f'<div class="wrap index"><nav class="tabs"><button data-v="lib" class="on">Library</button><button data-v="res">Machine Study Resources</button></nav>'
+    f'<section id="v-lib"><div class="hero"><h1>The library</h1><p>Original texts beside new English translations, page by page, and originals without a translation. '
     f'Translations are machine-made and model-reviewed, not human-revised; each page says where its text comes from.</p></div>'
     f'<div class="controls"><div class="seg" id="by"><span class="lbl">Group by</span><button data-by="author" class="on">Author</button><button data-by="genre">Genre</button>'
     f'<button data-by="lang">Language</button><button data-by="century">Century</button></div>'
     f'<input id="q" type="search" placeholder="search author or title"><span class="n" id="n"></span></div>'
-    f'<div id="list"></div><div id="pool" class="hidden">{"".join(rows)}</div></div><script>{JS_INDEX}</script></body></html>')
+    f'<div id="list"></div><div id="pool" class="hidden">{"".join(rows)}</div></section>'
+    f'<section id="v-res" class="hidden"><div class="hero"><h1>Machine Study Resources</h1><p>Supplements to the primary texts: study guides, concordances, reading notes, term lists. '
+    f'Not editions; aids to reading them. How to add one: <a href="https://github.com/{REPO}/blob/main/corpus/resources/README.md">corpus/resources/README.md</a>.</p></div>'
+    f'<div class="reslist">{rrows or "<p class=note>Nothing filed here yet.</p>"}</div></section></div><script>{JS_INDEX}</script></body></html>')
 print(f'{O}/index.html: {len(entries)} texts')
